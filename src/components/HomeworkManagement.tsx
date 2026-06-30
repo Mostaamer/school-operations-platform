@@ -117,7 +117,8 @@ export default function HomeworkManagement() {
 
       toast.success('تم تعيين الواجب بنجاح');
       setIsCreating(false);
-      setForm({ title: '', grade: 'الصف 7', classSection: 'أ', subject: 'الرياضيات', dueDate: '' });
+      // تم حل المشكلة هنا: تم إضافة unit و lesson لتفريغ كل الخانات بشكل صحيح
+      setForm({ title: '', grade: 'الصف 7', classSection: 'أ', subject: 'الرياضيات', unit: '', lesson: '', dueDate: '' });
       setAttachments([]);
       fetchHomework();
     } catch {
