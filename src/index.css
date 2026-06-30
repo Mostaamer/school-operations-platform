@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+/* تفعيل الوضع الليلي في Tailwind CSS v4 */
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Cairo', 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: var(--bg-primary);
+  --color-surface: var(--bg-surface);
+  
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+
+  --color-brand-light: #2563EB;
+  --color-brand-dark: #3B82F6;
+  
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+}
+
+@layer base {
+  :root {
+    --bg-primary: #F1F5F9;
+    --bg-surface: rgba(255, 255, 255, 0.85);
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+  }
+
+  .dark {
+    --bg-primary: #0B0F19;
+    --bg-surface: rgba(22, 30, 49, 0.8);
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+  }
+  
+  body {
+    @apply bg-[var(--bg-primary)] text-[var(--text-primary)] transition-all duration-500 font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    
+    background-image: radial-gradient(rgba(15, 23, 42, 0.03) 1px, transparent 0), radial-gradient(rgba(15, 23, 42, 0.03) 1px, transparent 0);
+    background-size: 24px 24px;
+    background-position: 0 0, 12px 12px;
+  }
+
+  .dark body {
+    background-image: radial-gradient(rgba(248, 250, 252, 0.02) 1px, transparent 0), radial-gradient(rgba(248, 250, 252, 0.02) 1px, transparent 0);
+  }
+
+  /* القوائم الجانبية: شفافية + خط أسمك وأكبر */
+  .sidebar-btn {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-semibold transition-all duration-300 relative overflow-hidden;
+  }
+
+  /* دعم قلب اتجاهات السهم والأيقونات */
+  html[dir="ltr"] .space-x-reverse > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 0;
+  }
+
+  /* تجميل الجداول */
+  table thead {
+    @apply bg-slate-100/80 dark:bg-slate-800/80 backdrop-blur border-b border-slate-200/60 dark:border-slate-700/60 shadow-sm shadow-gray-200/30 dark:shadow-slate-900/30;
+  }
+  table thead th {
+    @apply font-semibold p-4 text-[var(--text-primary)] tracking-wide;
+  }
+  table tbody tr {
+    @apply transition-colors duration-200 border-b border-slate-100 dark:border-slate-800/40 last:border-0;
+  }
+  table tbody tr:hover {
+    @apply bg-brand-light/5 dark:bg-brand-dark/10;
+  }
+}
+
+/* ضبط الخلفية */
+body {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  transition: background-image 1s ease-in-out;
+}
+
+html:not(.dark) body {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4)), url('/1_2.jpg');
+}
+
+html.dark body {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/2_2.jpg');
+}
+
+/* البطاقات الأساسية: أصبحت أكثر تظليلاً وسهولة في القراءة */
+.floating-card {
+  background: rgba(255, 255, 255, 0.45); /* زيادة كثافة اللون هنا للتظليل */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.1);
+}
+
+.dark .floating-card {
+  background: rgba(0, 0, 0, 0.5); /* زيادة كثافة اللون هنا للتظليل */
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}

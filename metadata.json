@@ -1,0 +1,6 @@
+{
+  "name": "School Operations Platform",
+  "description": "Enterprise-grade school management and operations platform for developers, administrators, supervisors, and teachers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
