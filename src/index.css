@@ -98,9 +98,36 @@ html.dark body {
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.4);
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.1);
+  /* تعديل جديد لحماية البطاقة من تخطي عرض الشاشة */
+  @apply w-full max-w-[100vw] sm:max-w-none;
 }
 
 .dark .floating-card {
   background: rgba(0, 0, 0, 0.5); /* زيادة كثافة اللون هنا للتظليل */
   border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+
+/* =========================================
+   إضافات حماية توافق الشاشات (تمنع التحرك الأفقي)
+   ========================================= */
+
+html, body {
+  overflow-x: hidden !important; /* القفل النهائي لمنع أي محتوى من الخروج عن الشاشة */
+  width: 100%;
+  position: relative;
+  max-width: 100vw;
+}
+
+/* كلاس مخصص للجداول ليجعلها تمرر برفق من الداخل بدلاً من تحريك الصفحة كلها */
+.table-container {
+  @apply w-full overflow-x-auto block;
+  max-width: 100vw;
+}
+
+/* تحسينات لضمان عدم حدوث مشاكل في خلفيات الموبايل */
+@media (max-width: 768px) {
+  body {
+    background-attachment: scroll; /* الخيار الثابت يسبب مشاكل أبعاد على الموبايل */
+  }
 }
