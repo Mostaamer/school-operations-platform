@@ -2,7 +2,8 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <!-- التعديل الأهم: السماح للمستخدم بالتكبير والتصغير بحرية (user-scalable=yes) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
   <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <title>منصة SOP</title>
 
@@ -40,7 +41,7 @@
     }
 
     /* =========================================
-       3. تثبيت أبعاد الشاشة والخلفيات - تحسين الأداء
+       3. تثبيت أبعاد الشاشة والخلفيات
        ========================================= */
     body {
       background-size: cover !important;
@@ -51,7 +52,7 @@
       margin: 0 !important;
       font-family: system-ui, -apple-system, sans-serif !important;
       width: 100% !important; 
-      overflow-x: hidden !important;
+      /* تم إزالة overflow-x: hidden لكي يعمل التمرير الأفقي للجداول في الموبايل */
       min-height: 100vh !important;
     }
 
@@ -65,7 +66,7 @@
     }
 
     /* =========================================
-       4. الكروت الطافية (Advanced Glassmorphism) - تحسين الأداء
+       4. الكروت الطافية (Advanced Glassmorphism)
        ========================================= */
     .floating-card {
       background: var(--card-bg-light) !important; 
@@ -92,146 +93,31 @@
       box-shadow: 0 12px 40px -4px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
     }
 
-    /* =========================================
-       5. أزرار القائمة الجانبية
-       ========================================= */
-    .sidebar-btn {
-      display: flex !important;
-      align-items: center !important;
-      gap: 14px !important;
-      padding: 14px 20px !important;
-      border-radius: 16px !important;
-      font-size: 15px !important;
-      font-weight: 600 !important;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-      position: relative !important;
-      overflow: hidden !important;
-      z-index: 1 !important;
-      background: transparent !important;
-      border: 1px solid transparent !important;
-    }
+    /* باقي التنسيقات كما هي... */
+    .sidebar-btn { display: flex !important; align-items: center !important; gap: 14px !important; padding: 14px 20px !important; border-radius: 16px !important; font-size: 15px !important; font-weight: 600 !important; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; position: relative !important; overflow: hidden !important; z-index: 1 !important; background: transparent !important; border: 1px solid transparent !important; }
+    .sidebar-btn::before { content: '' !important; position: absolute !important; inset: 0 !important; background: linear-gradient(90deg, rgba(37,99,235,0.1), transparent) !important; opacity: 0 !important; transition: opacity 0.3s ease !important; z-index: -1 !important; border-radius: 16px !important; }
+    .sidebar-btn:hover { transform: translateX(-6px) !important; border-color: rgba(37, 99, 235, 0.2) !important; color: #2563eb !important; }
+    .sidebar-btn:hover::before { opacity: 1 !important; }
+    html.dark .sidebar-btn:hover { color: #60a5fa !important; border-color: rgba(96, 165, 250, 0.2) !important; }
+    html.dark .sidebar-btn::before { background: linear-gradient(90deg, rgba(96,165,250,0.15), transparent) !important; }
 
-    .sidebar-btn::before {
-      content: '' !important;
-      position: absolute !important;
-      inset: 0 !important;
-      background: linear-gradient(90deg, rgba(37,99,235,0.1), transparent) !important;
-      opacity: 0 !important;
-      transition: opacity 0.3s ease !important;
-      z-index: -1 !important;
-      border-radius: 16px !important;
-    }
+    .table-container { overflow-x: auto !important; width: 100% !important; border-radius: 12px; -webkit-overflow-scrolling: touch; }
+    table { border-collapse: separate !important; border-spacing: 0 !important; width: 100% !important; min-width: 500px !important; }
+    table thead { background-color: rgba(248, 250, 252, 0.6) !important; backdrop-filter: blur(8px) !important; position: sticky !important; top: 0 !important; z-index: 10 !important; }
+    html.dark table thead { background-color: rgba(15, 23, 42, 0.6) !important; }
+    table thead th { font-weight: 700 !important; padding: 14px 16px !important; font-size: 0.85rem !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; color: #475569 !important; border-bottom: 2px solid rgba(226, 232, 240, 0.8) !important; white-space: nowrap !important; text-align: right !important; }
+    html.dark table thead th { color: #94a3b8 !important; border-bottom: 2px solid rgba(51, 65, 85, 0.8) !important; }
+    table tbody tr { transition: all 0.2s ease-in-out !important; cursor: pointer !important; }
+    table tbody td { padding: 12px 16px !important; border-bottom: 1px solid rgba(226, 232, 240, 0.4) !important; font-size: 0.9rem !important; text-align: right !important; }
+    html.dark table tbody td { border-bottom: 1px solid rgba(51, 65, 85, 0.4) !important; }
+    table tbody tr:last-child td { border-bottom: none !important; }
+    table tbody tr:hover { background-color: rgba(255, 255, 255, 0.6) !important; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02) !important; }
+    html.dark table tbody tr:hover { background-color: rgba(30, 41, 59, 0.6) !important; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15) !important; }
 
-    .sidebar-btn:hover {
-      transform: translateX(-6px) !important;
-      border-color: rgba(37, 99, 235, 0.2) !important;
-      color: #2563eb !important;
-    }
-
-    .sidebar-btn:hover::before {
-      opacity: 1 !important;
-    }
-
-    html.dark .sidebar-btn:hover {
-      color: #60a5fa !important;
-      border-color: rgba(96, 165, 250, 0.2) !important;
-    }
-
-    html.dark .sidebar-btn::before {
-      background: linear-gradient(90deg, rgba(96,165,250,0.15), transparent) !important;
-    }
-
-    /* =========================================
-       6. الجداول (مرنة ومتجاوبة) - تحسين للشاشات الصغيرة
-       ========================================= */
-    .table-container {
-      overflow-x: auto !important;
-      width: 100% !important;
-      border-radius: 12px;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    table {
-      border-collapse: separate !important;
-      border-spacing: 0 !important;
-      width: 100% !important;
-      min-width: 500px !important;
-    }
-
-    table thead {
-      background-color: rgba(248, 250, 252, 0.6) !important;
-      backdrop-filter: blur(8px) !important;
-      position: sticky !important;
-      top: 0 !important;
-      z-index: 10 !important;
-    }
-
-    html.dark table thead {
-      background-color: rgba(15, 23, 42, 0.6) !important;
-    }
-
-    table thead th {
-      font-weight: 700 !important;
-      padding: 14px 16px !important;
-      font-size: 0.85rem !important;
-      text-transform: uppercase !important;
-      letter-spacing: 0.05em !important;
-      color: #475569 !important;
-      border-bottom: 2px solid rgba(226, 232, 240, 0.8) !important;
-      white-space: nowrap !important;
-      text-align: right !important;
-    }
-
-    html.dark table thead th {
-      color: #94a3b8 !important;
-      border-bottom: 2px solid rgba(51, 65, 85, 0.8) !important;
-    }
-
-    table tbody tr {
-      transition: all 0.2s ease-in-out !important;
-      cursor: pointer !important;
-    }
-
-    table tbody td {
-      padding: 12px 16px !important;
-      border-bottom: 1px solid rgba(226, 232, 240, 0.4) !important;
-      font-size: 0.9rem !important;
-      text-align: right !important;
-    }
-
-    html.dark table tbody td {
-      border-bottom: 1px solid rgba(51, 65, 85, 0.4) !important;
-    }
-
-    table tbody tr:last-child td {
-      border-bottom: none !important;
-    }
-
-    table tbody tr:hover {
-      background-color: rgba(255, 255, 255, 0.6) !important;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02) !important;
-    }
-
-    html.dark table tbody tr:hover {
-      background-color: rgba(30, 41, 59, 0.6) !important;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15) !important;
-    }
-
-    /* =========================================
-       7. تحسينات إضافية للشاشات الصغيرة
-       ========================================= */
     @media (max-width: 640px) {
-      .floating-card {
-        border-radius: 16px !important;
-        backdrop-filter: blur(8px) saturate(100%) !important;
-      }
-      table {
-        min-width: 400px !important;
-      }
-      table thead th, table tbody td {
-        padding: 10px 12px !important;
-        font-size: 0.8rem !important;
-      }
+      .floating-card { border-radius: 16px !important; backdrop-filter: blur(8px) saturate(100%) !important; }
+      table { min-width: 400px !important; }
+      table thead th, table tbody td { padding: 10px 12px !important; font-size: 0.8rem !important; }
     }
   </style>
 </head>

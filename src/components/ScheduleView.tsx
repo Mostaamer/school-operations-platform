@@ -109,7 +109,7 @@ export default function ScheduleView() {
       </div>
 
       <div className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto w-full">
           <table className="w-full text-right border-collapse">
             <thead>
               <tr className="bg-blue-700 text-white shadow-md">
@@ -157,7 +157,6 @@ export default function ScheduleView() {
         </div>
       </div>
 
-      {/* باقي المكونات (Modal & DeleteConfirm) كما هي لا تغيير */}
       {editingCell && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white w-full max-w-sm rounded-[2rem] p-8 shadow-2xl">
