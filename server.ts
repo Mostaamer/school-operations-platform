@@ -1,7 +1,18 @@
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
-import { GoogleGenAI, Type, Schema } from '@google/genai';
+import { backupService } from './backupService'; 
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+
+// تحميل متغيرات البيئة
+dotenv.config();
+
+// إعداد عميل Supabase
+const supabase = createClient(
+  'https://wwgchgvykykeapbnivmr.supabase.co', 
+  'sb_publishable_O00HiI9X2Wpkw_NkbmAT2w_hsWocwBv'
+);
 
 async function startServer() {
   const app = express();
@@ -13,10 +24,7 @@ async function startServer() {
   
   function initDb() {
     db = {
-      settings: {
-        activeClasses: ['أ', 'ب', 'ج', 'د', 'هـ'], // تم ضبطها لـ 5 فصول
-        allClasses: ['أ', 'ب', 'ج', 'د', 'هـ']
-      },
+      settings: { activeClasses: ['أ', 'ب', 'ج', 'د', 'هـ'], allClasses: ['أ', 'ب', 'ج', 'د', 'هـ'] },
       users: [
         { id: '1', employeeCode: 'DEV-001', name: 'المطور الرئيسي', role: 'DEVELOPER', isActive: true, password: '123' },
         { id: '2', employeeCode: 'ADM-001', name: 'مدير النظام', role: 'ADMIN', isActive: true, password: '123' },
@@ -24,54 +32,100 @@ async function startServer() {
       ],
       teachers: [],
       students: [],
-      exams: [],
-      resources: [],
-      schedules: [],
-      curriculumProgress: [],
-      homework: [],
-      notifications: [],
-      auditLogs: [],
-      backups: [],
-      trackingLogs: [],
-      teacherAttendance: []
+      backups: [], 
     };
   }
-
-  // تهيئة قاعدة بيانات فارغة
   initDb();
 
-  const clients: express.Response[] = [];
-
-  const notifyClients = (notification: any) => {
-    const notifObj = { id: `NOTIF-${Date.now()}`, read: false, ...notification };
-    db.notifications.unshift(notifObj as never);
-    clients.forEach(client => { client.write(`data: ${JSON.stringify(notifObj)}\n\n`); });
-  };
-
   // --- API Routes ---
-  
   app.get('/api/users', (req, res) => res.json(db.users));
-  
-  app.get('/api/teachers', (req, res) => res.json(db.teachers));
-
-  app.post('/api/teachers', (req, res) => {
-    const newTeacher = { id: `TCH-${Date.now()}`, status: 'ACTIVE', ...req.body };
-    db.teachers.push(newTeacher);
-    res.status(201).json(newTeacher);
-  });
-
   app.get('/api/students', (req, res) => res.json(db.students));
+  app.get('/api/backups', (req, res) => res.json(db.backups));
 
-  app.post('/api/students', (req, res) => {
-    const newStudent = { ...req.body, id: `STU-${Date.now()}` };
-    db.students.push(newStudent);
-    res.json(newStudent);
+  // --- نظام تسجيل الدخول (مع حماية الحسابات المعطلة) ---
+  app.post('/api/login', async (req, res) => {
+    const { employeeCode, password } = req.body;
+    try {
+      const { data: users, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('employeeCode', employeeCode)
+        .eq('password', password);
+
+      if (error) throw error;
+      if (!users || users.length === 0) {
+        return res.status(401).json({ error: "بيانات الدخول غير صحيحة" });
+      }
+
+      const user = users[0];
+      if (user.isActive === false) {
+        return res.status(403).json({ error: "هذا الحساب معطل حالياً. يرجى مراجعة إدارة النظام." });
+      }
+
+      res.json({ success: true, user: user });
+    } catch (err) {
+      console.error("Login Error:", err);
+      res.status(500).json({ error: "حدث خطأ في السيرفر أثناء تسجيل الدخول" });
+    }
   });
 
-  app.get('/api/settings', (req, res) => res.json(db.settings));
+  // 1. إنشاء نسخة احتياطية
+  app.post('/api/backups/create', async (req, res) => {
+    try {
+      const newBackup = backupService.createBackup(db);
+      const { error } = await supabase
+        .from('backup_logs')
+        .insert([{ 
+            backup_name: newBackup.name, 
+            file_path: `/backups/${newBackup.id}.json`,
+            file_size_mb: 0.1, 
+            is_automated: false,
+            status: 'SUCCESS'
+        }]);
 
-  // باقي الـ Routes تظل كما هي لضمان عمل البرنامج...
-  // (قمت بالاختصار هنا للتركيز على تنظيف البيانات الأساسية، تأكد من إبقاء باقي الـ Endpoints الموجودة في كودك الأصلي)
+      if (error) throw error;
+      db.backups.push(newBackup);
+      res.json(newBackup);
+    } catch (error) {
+      console.error("خطأ في الربط مع Supabase:", error);
+      res.status(500).json({ error: "فشل إنشاء النسخة" });
+    }
+  });
+
+  // 2. استعادة نسخة (الاستعادة الانتقائية)
+  app.post('/api/backups/:id/restore', (req, res) => {
+    try {
+      const { restoreParts } = req.body; // مصفوفة بالأجزاء المراد استعادتها
+      const fullBackup = backupService.restoreBackup(req.params.id);
+      
+      // إذا لم يحدد أجزاء، نستعيد كل شيء. إذا حدد، نستعيد المختار فقط.
+      if (!restoreParts || restoreParts.length === 0) {
+        db = fullBackup;
+      } else {
+        const newDb = { ...db };
+        if (restoreParts.includes('users')) newDb.users = fullBackup.users;
+        if (restoreParts.includes('teachers')) newDb.teachers = fullBackup.teachers;
+        if (restoreParts.includes('students')) newDb.students = fullBackup.students;
+        if (restoreParts.includes('settings')) newDb.settings = fullBackup.settings;
+        db = newDb;
+      }
+      
+      res.json({ success: true, message: "تمت الاستعادة بنجاح" });
+    } catch (error) {
+      res.status(404).json({ error: "النسخة غير موجودة" });
+    }
+  });
+
+  // 3. حذف نسخة
+  app.delete('/api/backups/:id', (req, res) => {
+    const success = backupService.deleteBackup(req.params.id);
+    if (success) {
+      db.backups = db.backups.filter((b: any) => b.id !== req.params.id);
+      res.json({ success: true });
+    } else {
+      res.status(404).json({ error: "النسخة غير موجودة" });
+    }
+  });
 
   // Vite Middleware
   if (process.env.NODE_ENV !== 'production') {

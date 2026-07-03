@@ -34,11 +34,22 @@ export default function TeacherLesson() {
   });
 
   const fetchLogs = async () => {
-    if (!user) return;
+    if (!user || !user.id) return;
     setLoading(true);
-    const { data, error } = await supabase.from('lesson_logs').select('*').order('log_date', { ascending: false });
-    if (error) toast.error('خطأ في جلب البيانات');
+    
+    // سحب الدروس الخاصة بهذا المعلم فقط بناءً على الآي دي الخاص به
+    const { data, error } = await supabase
+      .from('lesson_logs')
+      .select('*')
+      .eq('teacher_id', Number(user.id)) 
+      .order('log_date', { ascending: false });
+      
+    if (error) {
+      toast.error('خطأ في جلب البيانات: ' + error.message);
+      console.error(error);
+    }
     else setLogs(data || []);
+    
     setLoading(false);
   };
 
@@ -46,19 +57,32 @@ export default function TeacherLesson() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user || !user.id) {
+      toast.error("حدث خطأ: غير قادر على تحديد هوية المعلم. يرجى تسجيل الدخول مجدداً.");
+      return;
+    }
+
+    // الربط الأوتوماتيكي: أخذ رقم المعلم من السيستم وتحويله لرقم ليطابق قاعدة البيانات
     const dataToSubmit = {
       ...formData,
       concept_number: isConceptEnabled ? formData.concept_number : 0,
-      teacher_id: 1
+      teacher_id: Number(user.id) 
     };
 
     if (editingId) {
       const { error } = await supabase.from('lesson_logs').update(dataToSubmit).eq('id', editingId);
-      if (error) toast.error('خطأ في التحديث');
+      if (error) {
+        toast.error('خطأ في التحديث: ' + error.message);
+        console.error(error);
+      }
       else toast.success('تم تعديل الدرس بنجاح');
     } else {
       const { error } = await supabase.from('lesson_logs').insert([dataToSubmit]);
-      if (error) toast.error('خطأ في الحفظ');
+      if (error) {
+        toast.error('خطأ في الحفظ: ' + error.message);
+        console.error("بيانات الخطأ:", dataToSubmit, error);
+      }
       else toast.success('تم تسجيل الدرس بنجاح');
     }
     
@@ -75,8 +99,9 @@ export default function TeacherLesson() {
 
   const handleDelete = async (id: number) => {
     if (!window.confirm('هل أنت متأكد من الحذف؟')) return;
-    await supabase.from('lesson_logs').delete().eq('id', id);
-    fetchLogs();
+    const { error } = await supabase.from('lesson_logs').delete().eq('id', id);
+    if(error) toast.error('خطأ في الحذف: ' + error.message);
+    else fetchLogs();
   };
 
   const renderStageSection = (stageName: string) => (

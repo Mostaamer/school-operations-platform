@@ -1,0 +1,21 @@
+{
+  "name": "منصة العمليات المدرسية",
+  "short_name": "SOP",
+  "description": "نظام الإدارة المتكامل للعمليات المدرسية والتعليمية",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F1F5F9",
+  "theme_color": "#2563EB",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2921/2921226.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2921/2921226.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

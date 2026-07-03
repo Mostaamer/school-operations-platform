@@ -1,13 +1,242 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>منصة العمليات المدرسية (SOP)</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <title>منصة SOP</title>
 
+  <style>
+    /* =========================================
+       1. المتغيرات اللونية (للسهولة والتناسق)
+       ========================================= */
+    :root {
+      --primary-glow: rgba(37, 99, 235, 0.15);
+      --card-bg-light: rgba(255, 255, 255, 0.65);
+      --card-border-light: rgba(255, 255, 255, 0.8);
+      --card-shadow-light: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+      
+      --card-bg-dark: rgba(15, 23, 42, 0.65);
+      --card-border-dark: rgba(255, 255, 255, 0.1);
+      --card-shadow-dark: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    /* =========================================
+       2. شريط التمرير المخصص (Custom Scrollbar)
+       ========================================= */
+    ::-webkit-scrollbar {
+      width: 6px !important;
+      height: 6px !important;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent !important;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.4) !important;
+      border-radius: 10px !important;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(99, 102, 241, 0.7) !important;
+    }
+
+    /* =========================================
+       3. تثبيت أبعاد الشاشة والخلفيات - تحسين الأداء
+       ========================================= */
+    body {
+      background-size: cover !important;
+      background-position: center !important;
+      background-repeat: no-repeat !important;
+      background-attachment: fixed !important;
+      transition: background 1s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      margin: 0 !important;
+      font-family: system-ui, -apple-system, sans-serif !important;
+      width: 100% !important; 
+      overflow-x: hidden !important;
+      min-height: 100vh !important;
+    }
+
+    html:not(.dark) body {
+      background-image: linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(241,245,249,0.9) 100%), url('/1_2.jpg') !important;
+    }
+    
+    html.dark body {
+      background-image: linear-gradient(135deg, rgba(15,23,42,0.85) 0%, rgba(2,6,23,0.95) 100%), url('/2_2.jpg') !important;
+      color: #f8fafc !important;
+    }
+
+    /* =========================================
+       4. الكروت الطافية (Advanced Glassmorphism) - تحسين الأداء
+       ========================================= */
+    .floating-card {
+      background: var(--card-bg-light) !important; 
+      backdrop-filter: blur(12px) saturate(120%) !important;
+      -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
+      border: 1px solid var(--card-border-light) !important;
+      box-shadow: var(--card-shadow-light), inset 0 0 0 1px rgba(255, 255, 255, 0.3) !important;
+      border-radius: 24px !important;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease !important;
+    }
+
+    .floating-card:hover {
+      transform: translateY(-3px) !important;
+      box-shadow: 0 12px 40px -4px rgba(31, 38, 135, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.5) !important;
+    }
+
+    html.dark .floating-card {
+      background: var(--card-bg-dark) !important; 
+      border: 1px solid var(--card-border-dark) !important;
+      box-shadow: var(--card-shadow-dark), inset 0 0 0 1px rgba(255, 255, 255, 0.02) !important;
+    }
+
+    html.dark .floating-card:hover {
+      box-shadow: 0 12px 40px -4px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+    }
+
+    /* =========================================
+       5. أزرار القائمة الجانبية
+       ========================================= */
+    .sidebar-btn {
+      display: flex !important;
+      align-items: center !important;
+      gap: 14px !important;
+      padding: 14px 20px !important;
+      border-radius: 16px !important;
+      font-size: 15px !important;
+      font-weight: 600 !important;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      position: relative !important;
+      overflow: hidden !important;
+      z-index: 1 !important;
+      background: transparent !important;
+      border: 1px solid transparent !important;
+    }
+
+    .sidebar-btn::before {
+      content: '' !important;
+      position: absolute !important;
+      inset: 0 !important;
+      background: linear-gradient(90deg, rgba(37,99,235,0.1), transparent) !important;
+      opacity: 0 !important;
+      transition: opacity 0.3s ease !important;
+      z-index: -1 !important;
+      border-radius: 16px !important;
+    }
+
+    .sidebar-btn:hover {
+      transform: translateX(-6px) !important;
+      border-color: rgba(37, 99, 235, 0.2) !important;
+      color: #2563eb !important;
+    }
+
+    .sidebar-btn:hover::before {
+      opacity: 1 !important;
+    }
+
+    html.dark .sidebar-btn:hover {
+      color: #60a5fa !important;
+      border-color: rgba(96, 165, 250, 0.2) !important;
+    }
+
+    html.dark .sidebar-btn::before {
+      background: linear-gradient(90deg, rgba(96,165,250,0.15), transparent) !important;
+    }
+
+    /* =========================================
+       6. الجداول (مرنة ومتجاوبة) - تحسين للشاشات الصغيرة
+       ========================================= */
+    .table-container {
+      overflow-x: auto !important;
+      width: 100% !important;
+      border-radius: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      border-collapse: separate !important;
+      border-spacing: 0 !important;
+      width: 100% !important;
+      min-width: 500px !important;
+    }
+
+    table thead {
+      background-color: rgba(248, 250, 252, 0.6) !important;
+      backdrop-filter: blur(8px) !important;
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 10 !important;
+    }
+
+    html.dark table thead {
+      background-color: rgba(15, 23, 42, 0.6) !important;
+    }
+
+    table thead th {
+      font-weight: 700 !important;
+      padding: 14px 16px !important;
+      font-size: 0.85rem !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.05em !important;
+      color: #475569 !important;
+      border-bottom: 2px solid rgba(226, 232, 240, 0.8) !important;
+      white-space: nowrap !important;
+      text-align: right !important;
+    }
+
+    html.dark table thead th {
+      color: #94a3b8 !important;
+      border-bottom: 2px solid rgba(51, 65, 85, 0.8) !important;
+    }
+
+    table tbody tr {
+      transition: all 0.2s ease-in-out !important;
+      cursor: pointer !important;
+    }
+
+    table tbody td {
+      padding: 12px 16px !important;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.4) !important;
+      font-size: 0.9rem !important;
+      text-align: right !important;
+    }
+
+    html.dark table tbody td {
+      border-bottom: 1px solid rgba(51, 65, 85, 0.4) !important;
+    }
+
+    table tbody tr:last-child td {
+      border-bottom: none !important;
+    }
+
+    table tbody tr:hover {
+      background-color: rgba(255, 255, 255, 0.6) !important;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02) !important;
+    }
+
+    html.dark table tbody tr:hover {
+      background-color: rgba(30, 41, 59, 0.6) !important;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    /* =========================================
+       7. تحسينات إضافية للشاشات الصغيرة
+       ========================================= */
+    @media (max-width: 640px) {
+      .floating-card {
+        border-radius: 16px !important;
+        backdrop-filter: blur(8px) saturate(100%) !important;
+      }
+      table {
+        min-width: 400px !important;
+      }
+      table thead th, table tbody td {
+        padding: 10px 12px !important;
+        font-size: 0.8rem !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+{
+  "settings": {
+    "activeClasses": [
+      "أ",
+      "ب",
+      "ج",
+      "د",
+      "هـ"
+    ],
+    "allClasses": [
+      "أ",
+      "ب",
+      "ج",
+      "د",
+      "هـ"
+    ]
+  },
+  "users": [
+    {
+      "id": "1",
+      "employeeCode": "DEV-001",
+      "name": "المطور الرئيسي",
+      "role": "DEVELOPER",
+      "isActive": true,
+      "password": "123"
+    },
+    {
+      "id": "2",
+      "employeeCode": "ADM-001",
+      "name": "مدير النظام",
+      "role": "ADMIN",
+      "isActive": true,
+      "password": "123"
+    },
+    {
+      "id": "3",
+      "employeeCode": "SUP-001",
+      "name": "المشرف الأكاديمي",
+      "role": "SUPERVISOR",
+      "isActive": true,
+      "password": "123"
+    }
+  ],
+  "teachers": [],
+  "students": [],
+  "backups": []
+}
