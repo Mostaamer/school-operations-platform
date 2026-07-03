@@ -25,15 +25,12 @@ export default function Layout() {
   const location = useLocation();
   const { t, i18n } = useTranslation();
   
-  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
+  // التعديل 1: جعل القائمة مغلقة بشكل افتراضي دائماً عند بدء التشغيل
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
 
-  // مراقبة حجم الشاشة لضبط القائمة تلقائياً
-  useEffect(() => {
-    const handleResize = () => setIsSidebarOpen(window.innerWidth > 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  // التعديل 2: تم إزالة الـ useEffect الخاص بالـ resize 
+  // لمنع فتح القائمة بشكل إجباري عند تغيير أبعاد الشاشة أو تدوير الهاتف
 
   // إغلاق القائمة عند تغيير الصفحة في وضع الموبايل
   useEffect(() => {
@@ -136,7 +133,7 @@ export default function Layout() {
               : (i18n.language === 'ar' ? "translate-x-full md:translate-x-0 md:w-20" : "-translate-x-full md:translate-x-0 md:w-20")
           )}
         >
-          {/* ترويسة القائمة الجانبية - هنا تم الإصلاح الجذري للزر */}
+          {/* ترويسة القائمة الجانبية */}
           <div className="flex items-center justify-between w-full p-4 border-b border-white/30 dark:border-slate-700/50">
             
             <div className="flex items-center gap-3">
@@ -148,10 +145,10 @@ export default function Layout() {
               </h1>
             </div>
             
-            {/* زر "الثلاث شُرط" لطي القائمة على الموبايل - أصبح واضحاً وظاهراً بقوة */}
+            {/* زر "الثلاث شُرط" لطي القائمة من الداخل */}
             <button 
               onClick={() => setIsSidebarOpen(false)} 
-              className="md:hidden flex items-center justify-center p-2 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-slate-800 dark:text-blue-400 dark:hover:bg-slate-700 transition-colors z-[60]"
+              className="flex items-center justify-center p-2 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-slate-800 dark:text-blue-400 dark:hover:bg-slate-700 transition-colors z-[60]"
               aria-label="طي القائمة"
             >
               <Menu className="w-6 h-6" />
@@ -189,13 +186,15 @@ export default function Layout() {
           
           <header className="sticky top-0 z-30 bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl border-b border-white/30 dark:border-slate-700/50 px-4 md:px-6 py-4 flex items-center justify-between shadow-sm transition-colors duration-500">
             <div className="flex items-center gap-4">
-              {/* زر "الثلاث شُرط" لفتح القائمة (يظهر عندما تكون القائمة مغلقة) */}
+              
+              {/* التعديل 3: إزالة `md:hidden` ليظل الزر متواجداً دائماً وتغيير الوظيفة لتعكس الحالة (تفتح/تغلق) */}
               <button 
-                onClick={() => setIsSidebarOpen(true)} 
-                className="md:hidden flex items-center justify-center p-2.5 rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/40 hover:bg-blue-700 active:scale-95 transition-all z-50"
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+                className="flex items-center justify-center p-2.5 rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/40 hover:bg-blue-700 active:scale-95 transition-all z-50"
               >
                 <Menu className="w-6 h-6" />
               </button>
+              
               <div className="hidden sm:block"><GlobalSearch /></div>
             </div>
             
