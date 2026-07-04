@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { io, Socket } from 'socket.io-client'; // 🆕 تمت إضافة مكتبة السوكت
 
 export type Role = 'ADMIN' | 'TEACHER' | 'SUPERVISOR' | 'DEVELOPER';
 
@@ -18,6 +19,7 @@ interface AuthContextType {
   user: User | null;
   login: (code: string, password?: string) => Promise<boolean>;
   logout: () => void;
+  socket: Socket | null; // 🆕 إضافة السوكت للـ Context
 }
 
 // الاتصال بـ Supabase
@@ -30,6 +32,20 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null); // 🆕 حالة السوكت
+
+  // 🆕 تهيئة اتصال السوكت عند تشغيل التطبيق
+  useEffect(() => {
+    // يمكنك تغيير الرابط لاحقاً لرابط السيرفر الفعلي
+    const newSocket = io('http://localhost:5000', {
+      autoConnect: true,
+    });
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.close();
+    };
+  }, []);
 
   const login = async (code: string, password?: string): Promise<boolean> => {
     try {
@@ -71,7 +87,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    // 🆕 تمرير السوكت ليكون متاحاً في كل التطبيق
+    <AuthContext.Provider value={{ user, login, logout, socket }}>
       {children}
     </AuthContext.Provider>
   );

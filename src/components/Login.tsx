@@ -1,10 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../lib/auth-context';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Atom, Dna, UserCircle2, KeyRound, Sparkles, Eye, EyeOff, Languages } from 'lucide-react';
+import { Atom, Dna, UserCircle2, KeyRound, Sparkles, Eye, EyeOff, Languages, QrCode, ScanLine, ArrowLeft, MonitorSmartphone } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+
+// 🆕 استدعاء دالة تهيئة السوكت والمكتبات الجديدة للـ QR
+import { initSocket } from './auth-socket/socketHandler'; 
+import { QRCodeSVG } from 'qrcode.react';
+import { Scanner } from '@yudiel/react-qr-scanner';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -12,20 +17,25 @@ function cn(...inputs: ClassValue[]) {
 
 export default function Login() {
   const { t, i18n } = useTranslation();
-  const { login } = useAuth();
+  const { login, user } = useAuth(); // استخراج بيانات المستخدم الحالي (إن وجدت)
   const navigate = useNavigate();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // حالة رؤية الباسورد التحكم بالعين
+  const [showPassword, setShowPassword] = useState(false); 
   
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const isRtl = i18n.language === 'ar';
+  const [authView, setAuthView] = useState<'standard' | 'show_qr' | 'scan_qr'>('standard');
+  const [qrSessionId, setQrSessionId] = useState<string | null>(null);
 
-  // استرجاع اسم المستخدم المحفوظ عند تحميل الصفحة
+  const isRtl = i18n.language === 'ar';
+  
+  // 🆕 استخدام useRef للاحتفاظ بنسخة السوكت للوصول إليها داخل دالة الـ Scanner
+  const socketRef = useRef<any>(null);
+
   useEffect(() => {
     const savedUsername = localStorage.getItem('remembered_username');
     if (savedUsername) {
@@ -34,7 +44,32 @@ export default function Login() {
     }
   }, []);
 
-  // دالة تبديل اللغة وتغيير الكلاسات المصاحبة
+  useEffect(() => {
+    // تهيئة الاتصال
+    socketRef.current = initSocket();
+    const socket = socketRef.current;
+
+    if (authView === 'show_qr') {
+      socket.emit('request-qr');
+      
+      socket.on('qr-generated', (sessionId: string) => {
+        console.log("تم استلام كود الجلسة:", sessionId);
+        setQrSessionId(sessionId);
+      });
+
+      socket.on('login-success', (userData: any) => {
+        console.log("تم الدخول بنجاح عبر الهاتف!", userData);
+        navigate('/'); 
+      });
+    } else {
+      setQrSessionId(null);
+    }
+
+    return () => { 
+      socket.disconnect(); 
+    };
+  }, [authView, navigate]);
+
   const toggleLanguage = () => {
     const nextLang = i18n.language === 'ar' ? 'en' : 'ar';
     i18n.changeLanguage(nextLang);
@@ -54,7 +89,6 @@ export default function Login() {
       const success = await login(username, password);
       
       if (success) {
-        // حفظ أو مسح اسم المستخدم بناءً على خيار "تذكرني"
         if (rememberMe) {
           localStorage.setItem('remembered_username', username);
         } else {
@@ -76,18 +110,15 @@ export default function Login() {
   return (
     <div 
       className="relative min-h-screen flex flex-col items-center justify-center bg-cover bg-center bg-no-repeat overflow-hidden font-sans selection:bg-blue-500/30" 
-      style={{ backgroundImage: "url('/2.jpg')" }}
+      style={{ backgroundImage: "url('/2_3.jpg')" }} 
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       
-      {/* طبقة داكنة خفيفة (Overlay) فوق الصورة لضمان وضوح النص والتأثير الزجاجي */}
       <div className="absolute inset-0 bg-black/45 backdrop-blur-[2px]"></div>
       
-      {/* مؤثرات الإضاءة الخلفية المدمجة لتعطي ألواناً متداخلة مع صورتك */}
       <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-blue-600/10 rounded-full mix-blend-screen filter blur-[100px] animate-[pulse_6s_ease-in-out_infinite]"></div>
       <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-cyan-700/10 rounded-full mix-blend-screen filter blur-[120px] animate-[pulse_8s_ease-in-out_infinite] delay-700"></div>
 
-      {/* زر اختيار اللغة العلوي ذو تصميم زجاجي أنيق متناسق مع الواجهة ويتغير موقعه حسب الاتجاه تلقائياً */}
       <div className={cn("absolute top-6 z-20", isRtl ? "left-6" : "right-6")}>
         <button
           type="button"
@@ -99,12 +130,11 @@ export default function Login() {
         </button>
       </div>
 
-      {/* الحاوية الزجاجية الشفافة (Glassmorphism Card) */}
       <div className="relative z-10 w-full max-w-lg mx-4 rounded-[2.5rem] p-1 overflow-hidden bg-gradient-to-br from-white/10 to-transparent shadow-[0_12px_40px_0_rgba(0,0,0,0.6)] backdrop-blur-3xl border border-white/10 transition-all duration-500">
-        <div className="bg-[#0a1122]/75 w-full h-full rounded-[2.4rem] p-8 md:p-12">
+        <div className="bg-[#0a1122]/75 w-full h-full rounded-[2.4rem] p-8 md:p-12 relative overflow-hidden">
           
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* اللوجو والأيقونات المتحركة */}
+          <div className={cn("transition-all duration-500 w-full", authView === 'standard' ? "opacity-100 translate-x-0" : "opacity-0 translate-x-full hidden")}>
+            
             <div className="text-center mb-10">
               <div className="relative w-20 h-20 mx-auto mb-4 flex items-center justify-center bg-white/5 rounded-full border border-white/10 shadow-inner">
                 <Atom className="w-10 h-10 text-blue-400 animate-[spin_15s_linear_infinite]" strokeWidth={1.5} />
@@ -125,7 +155,6 @@ export default function Login() {
                 </div>
               )}
 
-              {/* حقل اسم المستخدم (Floating Label المطور - يدعم اللغتين والاتجاهين) */}
               <div className="relative group">
                 <input
                   type="text"
@@ -152,7 +181,6 @@ export default function Login() {
                 </label>
               </div>
 
-              {/* حقل كلمة المرور (Floating Label المطور - يدعم اللغتين والتحكم في الإخفاء والإظهار) */}
               <div className="relative group">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -179,7 +207,6 @@ export default function Login() {
                 </label>
               </div>
 
-              {/* خيار تذكر بياناتي + الزر البديل التفاعلي لرؤية الباسورد وتحريك العين */}
               <div className="flex items-center justify-between text-sm">
                 <label className="flex items-center gap-2 cursor-pointer group/cb">
                   <div className="relative flex items-center justify-center w-5 h-5 rounded bg-white/10 border border-white/20 group-hover/cb:border-blue-400 transition-colors">
@@ -200,7 +227,6 @@ export default function Login() {
                   </span>
                 </label>
                 
-                {/* زر إظهار وإخفاء الباسورد البديل لأيقونة نسيت الرمز */}
                 <button 
                   type="button" 
                   onClick={() => setShowPassword(!showPassword)}
@@ -211,7 +237,6 @@ export default function Login() {
                 </button>
               </div>
 
-              {/* زر الدخول الاحترافي */}
               <button
                 type="submit"
                 disabled={isLoading}
@@ -236,9 +261,128 @@ export default function Login() {
                 </span>
               </button>
             </form>
+
+            <div className="mt-6">
+              <div className="relative flex items-center py-2">
+                <div className="flex-grow border-t border-white/10"></div>
+                <span className="flex-shrink-0 mx-4 text-gray-500 text-xs font-bold uppercase tracking-wider">
+                  {isRtl ? 'أو الدخول الذكي' : 'OR SMART LOGIN'}
+                </span>
+                <div className="flex-grow border-t border-white/10"></div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <button
+                  type="button"
+                  onClick={() => setAuthView('show_qr')}
+                  className="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-all duration-300 active:scale-95 group"
+                >
+                  <QrCode className="w-6 h-6 text-cyan-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs font-bold">{isRtl ? 'عرض كود السبورة' : 'Show Board Code'}</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => setAuthView('scan_qr')}
+                  className="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-all duration-300 active:scale-95 group"
+                >
+                  <ScanLine className="w-6 h-6 text-blue-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs font-bold">{isRtl ? 'مسح بالكاميرا' : 'Scan via Camera'}</span>
+                </button>
+              </div>
+            </div>
+            
           </div>
+
+          {/* ------------------------------------------------------------- */}
+          {/* الواجهة الثانية: عرض كود الـ QR للسمارت بورد */}
+          {/* ------------------------------------------------------------- */}
+          {authView === 'show_qr' && (
+            <div className="absolute inset-0 bg-[#0a1122]/95 p-8 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300 z-20">
+              <button 
+                onClick={() => setAuthView('standard')}
+                className={cn("absolute top-6 p-2 rounded-full bg-white/5 hover:bg-white/20 text-gray-400 hover:text-white transition-all", isRtl ? "right-6" : "left-6")}
+              >
+                <ArrowLeft className={cn("w-6 h-6", isRtl && "rotate-180")} />
+              </button>
+              
+              <MonitorSmartphone className="w-12 h-12 text-cyan-400 mb-4 animate-bounce" />
+              <h3 className="text-2xl font-bold text-white mb-2">{isRtl ? 'تسجيل دخول للسبورة' : 'Board Login'}</h3>
+              <p className="text-gray-400 text-sm text-center mb-8 max-w-[250px]">
+                {isRtl ? 'افتح تطبيق SOP Hub من هاتفك وقم بمسح هذا الكود للدخول فوراً.' : 'Open SOP Hub on your phone and scan this code.'}
+              </p>
+              
+              <div className="w-56 h-56 bg-white rounded-3xl p-3 flex flex-col items-center justify-center shadow-[0_0_40px_rgba(34,211,238,0.3)]">
+                {qrSessionId ? (
+                  <>
+                    {/* 🆕 استخدام مكتبة qrcode.react لتوليد الكود الفعلي */}
+                    <QRCodeSVG value={qrSessionId} size={160} level={"H"} includeMargin={false} />
+                    <span className="text-black font-bold text-xs bg-gray-200 px-2 py-1 rounded mt-3">كود: {qrSessionId}</span>
+                  </>
+                ) : (
+                  <span className="text-black font-bold text-sm animate-pulse">{isRtl ? 'جاري جلب الكود...' : 'Fetching Code...'}</span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ------------------------------------------------------------- */}
+          {/* الواجهة الثالثة: مسح كود الـ QR من هاتف المدرس */}
+          {/* ------------------------------------------------------------- */}
+          {authView === 'scan_qr' && (
+            <div className="absolute inset-0 bg-[#0a1122]/95 p-8 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300 z-20">
+              <button 
+                onClick={() => setAuthView('standard')}
+                className={cn("absolute top-6 p-2 rounded-full bg-white/5 hover:bg-white/20 text-gray-400 hover:text-white transition-all z-30", isRtl ? "right-6" : "left-6")}
+              >
+                <ArrowLeft className={cn("w-6 h-6", isRtl && "rotate-180")} />
+              </button>
+              
+              <ScanLine className="w-12 h-12 text-blue-400 mb-4 z-30" />
+              <h3 className="text-2xl font-bold text-white mb-2 z-30">{isRtl ? 'الكاميرا قيد التشغيل' : 'Camera Active'}</h3>
+              <p className="text-gray-400 text-sm text-center mb-8 max-w-[250px] z-30">
+                {isRtl ? 'وجه الكاميرا نحو كود السمارت بورد ليتم ربط الجلسة تلقائياً.' : 'Point your camera at the smart board code to link session.'}
+              </p>
+              
+              <div className="relative w-full max-w-[240px] aspect-square rounded-[2rem] border-2 border-dashed border-blue-500/50 flex items-center justify-center overflow-hidden bg-black/60 shadow-inner">
+                
+                {/* 🆕 استخدام مكون Scanner من مكتبة @yudiel/react-qr-scanner */}
+                <Scanner
+                  onScan={(result) => {
+                    if (result && result.length > 0) {
+                      const scannedSessionId = result[0].rawValue;
+                      console.log("تم مسح الكود:", scannedSessionId);
+                      
+                      // إرسال كود البورد + بيانات المدرس المسجل للدخول حالياً إلى السيرفر
+                      if (socketRef.current) {
+                        socketRef.current.emit('verify-login', { 
+                          sessionId: scannedSessionId, 
+                          userData: user // نمرر بيانات المستخدم الحالي
+                        });
+                        
+                        // إعادة الشاشة للوضع الافتراضي بعد المسح الناجح
+                        setAuthView('standard');
+                      }
+                    }
+                  }}
+                  components={{ onOff: false, torch: false, zoom: false, finder: false }}
+                  styles={{ container: { width: '100%', height: '100%' } }}
+                />
+
+                {/* تأثير شعاع الليزر (pointer-events-none لكي لا يعيق تفاعل الكاميرا) */}
+                <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,1)] animate-[pulse_2s_ease-in-out_infinite] translate-y-[120px] pointer-events-none z-10"></div>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
+      
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes shimmer {
+          100% { transform: translateX(100%); }
+        }
+      `}} />
     </div>
   );
 }
