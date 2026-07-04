@@ -20,6 +20,8 @@ interface AuthContextType {
   login: (code: string, password?: string) => Promise<boolean>;
   logout: () => void;
   socket: Socket | null;
+  // 🆕 دالة جديدة لتسجيل الدخول المباشر للسبورة بعد مسح الـ QR
+  directLogin: (userData: User) => void; 
 }
 
 export const supabase = createClient(
@@ -34,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [socket, setSocket] = useState<Socket | null>(null); 
 
   useEffect(() => {
-    // 🆕 تم التعديل إلى بورت 3000 ليتوافق مع السيرفر
+    // تركنا السوكت كما هو لكي لا نعطل أي أجزاء أخرى في مشروعك تعتمد عليه
     const newSocket = io('http://localhost:3000', {
       autoConnect: true,
     });
@@ -80,12 +82,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // 🆕 دالة الدخول المباشر
+  const directLogin = (userData: User) => {
+    setUser(userData);
+  };
+
   const logout = () => {
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, socket }}>
+    <AuthContext.Provider value={{ user, login, logout, socket, directLogin }}>
       {children}
     </AuthContext.Provider>
   );

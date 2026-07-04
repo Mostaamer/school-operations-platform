@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../lib/auth-context';
+// 🆕 استدعاء supabase و directLogin
+import { useAuth, supabase } from '../lib/auth-context';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Atom, Dna, UserCircle2, KeyRound, Sparkles, Eye, EyeOff, Languages, QrCode, ScanLine, ArrowLeft, MonitorSmartphone } from 'lucide-react';
@@ -16,7 +17,8 @@ function cn(...inputs: ClassValue[]) {
 
 export default function Login() {
   const { t, i18n } = useTranslation();
-  const { login, user } = useAuth();
+  // 🆕 استخراج directLogin من الكونتيكست
+  const { login, user, directLogin } = useAuth();
   const navigate = useNavigate();
 
   const [username, setUsername] = useState('');
@@ -42,55 +44,60 @@ export default function Login() {
     }
   }, []);
 
+  // 🆕 الاعتماد على Supabase Realtime بدلاً من السوكت
   useEffect(() => {
-    try {
-      socketRef.current = initSocket();
-      const socket = socketRef.current;
+    let channel: any = null;
 
-      if (authView === 'show_qr') {
-        // 1. طلب الكود من السيرفر كالمعتاد
-        socket.emit('request-qr');
-        
-        // 2. 🆕 (الحل لمشكلة Vercel): توليد الكود محلياً إذا تأخر السيرفر أو تم حظر السوكت
-        const fallbackTimeout = setTimeout(() => {
-          setQrSessionId((prev) => {
-            if (!prev) {
-              const localSessionId = Math.random().toString(36).substring(7);
-              console.warn("تنبيه: تم توليد الكود محلياً لتخطي قيود Vercel.");
+    if (authView === 'show_qr') {
+      // 1. توليد كود محلي فريد
+      const localSessionId = Math.random().toString(36).substring(7);
+      setQrSessionId(localSessionId);
+
+      // 2. إنشاء السجل في Supabase
+      supabase.from('qr_sessions').insert([{ session_id: localSessionId, status: 'pending' }]).then();
+
+      // 3. الاستماع لأي تحديثات على هذا الكود (عندما يمسحه الموبايل)
+      channel = supabase
+        .channel(`qr_${localSessionId}`)
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'qr_sessions', filter: `session_id=eq.${localSessionId}` },
+          async (payload) => {
+            if (payload.new.status === 'linked' && payload.new.user_id) {
+              console.log("تم المسح بنجاح! جاري جلب بيانات المدرس...");
               
-              // إخبار السيرفر بالكود المحلي في حال كان الاتصال بطيئاً فقط
-              socket.emit('register-fallback-qr', localSessionId);
-              return localSessionId;
+              // جلب بيانات المدرس من قاعدة البيانات
+              const { data } = await supabase.from('users').select('*').eq('employeeCode', payload.new.user_id).maybeSingle();
+              
+              if (data) {
+                const userData = {
+                  id: String(data.id),
+                  employeeCode: data.employeeCode,
+                  name: data.name,
+                  role: data.role as any,
+                  isActive: true,
+                  subject: data.subject,
+                  grade: data.grade,
+                  assignedClasses: data.assignedClasses
+                };
+                
+                // تسجيل الدخول وتوجيه البورد للرئيسية
+                directLogin(userData);
+                navigate('/');
+              }
             }
-            return prev;
-          });
-        }, 1200); // الانتظار 1.2 ثانية فقط قبل إظهار الكود لتجنب الشاشة البيضاء
+          }
+        )
+        .subscribe();
 
-        socket.on('qr-generated', (sessionId: string) => {
-          clearTimeout(fallbackTimeout); // إلغاء التوليد المحلي إذا استجاب السيرفر
-          console.log("تم استلام كود الجلسة:", sessionId);
-          setQrSessionId(sessionId);
-        });
-
-        socket.on('login-success', (userData: any) => {
-          console.log("تم الدخول بنجاح عبر الهاتف!", userData);
-          navigate('/'); 
-        });
-      } else {
-        setQrSessionId(null);
-      }
-
-      return () => { 
-        socket.disconnect(); 
-      };
-    } catch (error) {
-      console.error("خطأ في تهيئة الاتصال:", error);
-      // توليد الكود حتى لو فشلت تهيئة السوكت بالكامل
-      if (authView === 'show_qr' && !qrSessionId) {
-        setQrSessionId(Math.random().toString(36).substring(7));
-      }
+    } else {
+      setQrSessionId(null);
     }
-  }, [authView, navigate]);
+
+    return () => { 
+      if (channel) supabase.removeChannel(channel); 
+    };
+  }, [authView, navigate, directLogin]);
 
   const toggleLanguage = () => {
     const nextLang = i18n.language === 'ar' ? 'en' : 'ar';
@@ -346,7 +353,7 @@ export default function Login() {
             </div>
           )}
 
-          {/* الواجهة الثالثة: مسح كود الـ QR */}
+          {/* الواجهة الثالثة: مسح كود الـ QR (ميزة إضافية) */}
           {authView === 'scan_qr' && (
             <div className="absolute inset-0 bg-[#0a1122]/95 p-8 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300 z-20 rounded-[2.4rem]">
               <button 
@@ -365,16 +372,17 @@ export default function Login() {
               <div className="relative w-full max-w-[320px] aspect-square rounded-[2rem] border-2 border-dashed border-blue-500/50 flex items-center justify-center overflow-hidden bg-black/60 shadow-inner">
                 
                 <Scanner
-                  onScan={(result) => {
+                  onScan={async (result) => {
                     if (result && result.length > 0) {
                       const scannedSessionId = result[0].rawValue;
-                      if (socketRef.current) {
-                        socketRef.current.emit('verify-login', { 
-                          sessionId: scannedSessionId, 
-                          userData: user 
-                        });
-                        setAuthView('standard');
+                      if (user?.employeeCode) {
+                        // 🆕 تحديث Supabase بدلاً من السوكت
+                        await supabase.from('qr_sessions').update({ 
+                          status: 'linked', 
+                          user_id: user.employeeCode 
+                        }).eq('session_id', scannedSessionId);
                       }
+                      setAuthView('standard');
                     }
                   }}
                   components={{ onOff: false, torch: false, zoom: false, finder: false }}

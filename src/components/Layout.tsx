@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
-import { useAuth } from '../lib/auth-context';
+// 🆕 استدعاء supabase من الكونتيكست
+import { useAuth, supabase } from '../lib/auth-context';
 import { useTranslation } from 'react-i18next';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -16,7 +17,6 @@ import NotificationsCenter from './NotificationsCenter';
 import GlobalSearch from './GlobalSearch';
 import WelcomeOverlay from './WelcomeOverlay';
 
-// 🆕 استدعاءات الـ Scanner
 import { Scanner } from '@yudiel/react-qr-scanner';
 import { initSocket } from './auth-socket/socketHandler';
 
@@ -33,7 +33,6 @@ export default function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
   
-  // 🆕 حالة للتحكم في ظهور نافذة مسح الكود من داخل لوحة التحكم
   const [isScannerModalOpen, setIsScannerModalOpen] = useState(false);
 
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -68,7 +67,6 @@ export default function Layout() {
     const role = user?.role || '';
     const baseLinks = [
       { path: '/', icon: LayoutDashboard, label: t('dashboard') },
-      // 🆕 الزر الجديد المضاف للقائمة الرئيسية ليظهر لكل المستخدمين
       { action: () => setIsScannerModalOpen(true), icon: ScanLine, label: 'ربط السمارت بورد' }
     ];
 
@@ -92,7 +90,7 @@ export default function Layout() {
         { path: '/supervisor/visits-list', icon: Eye, label: t('visit_reports') },
         { path: '/supervisor/behavior-dashboard', icon: TrendingUp, label: t('behavior_dashboard') },
         { path: '/supervisor/curriculum', icon: BookOpen, label: t('curriculum_tracking') },
-        { path: '/reports', icon: FileText, label: t('comprehensive_reports') },
+        // 🗑️ تم حذف "التقارير الشاملة" من هنا بناءً على طلبك
       ],
       TEACHER: [
         ...baseLinks,
@@ -171,7 +169,6 @@ export default function Layout() {
                 isActive ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/20" : "text-gray-700 dark:text-gray-300 hover:bg-white/60 dark:hover:bg-slate-800/60 hover:text-blue-600 dark:hover:text-blue-400"
               );
 
-              // 🆕 تمييز الأزرار التي تقوم بإجراء (مثل فتح المسح) عن الروابط العادية
               if (link.action) {
                 return (
                   <button key={link.label} onClick={link.action} className={cn(className, "w-full text-start")} title={!isSidebarOpen ? link.label : ""}>
@@ -291,20 +288,20 @@ export default function Layout() {
             
             <div className="relative w-full max-w-[300px] aspect-square rounded-[2rem] border-2 border-dashed border-blue-500/50 flex items-center justify-center overflow-hidden bg-black/60 shadow-inner">
               <Scanner
-                onScan={(result) => {
+                onScan={async (result) => {
                   if (result && result.length > 0) {
                     const scannedSessionId = result[0].rawValue;
                     console.log("تم مسح الكود:", scannedSessionId);
                     
-                    const socket = initSocket();
-                    socket.emit('verify-login', { 
-                      sessionId: scannedSessionId, 
-                      userData: user 
-                    });
+                    if (user?.employeeCode) {
+                      // 🆕 إرسال أمر التوثيق عبر تحديث جدول Supabase بدلاً من السوكت
+                      await supabase.from('qr_sessions')
+                        .update({ status: 'linked', user_id: user.employeeCode })
+                        .eq('session_id', scannedSessionId);
+                    }
                     
                     // إغلاق النافذة بعد المسح بنجاح
                     setTimeout(() => {
-                      socket.disconnect();
                       setIsScannerModalOpen(false);
                     }, 500);
                   }
