@@ -4,6 +4,9 @@ import { createServer as createViteServer } from 'vite';
 import { backupService } from './backupService'; 
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+// 🆕 استدعاء المكتبات الخاصة بتهيئة السوكت مع السيرفر
+import { createServer as createHttpServer } from 'http';
+import { Server as SocketIOServer } from 'socket.io';
 
 // تحميل متغيرات البيئة
 dotenv.config();
@@ -17,6 +20,32 @@ const supabase = createClient(
 async function startServer() {
   const app = express();
   const PORT = 3000;
+  
+  // 🆕 تغليف تطبيق Express بخادم HTTP ليدعم Socket.io
+  const httpServer = createHttpServer(app);
+  
+  // 🆕 تهيئة السوكت على السيرفر
+  const io = new SocketIOServer(httpServer, {
+    cors: { origin: "*" }
+  });
+
+  // 🆕 منطق الجلسات الخاص بالسمارت بورد
+  const activeSessions = new Map();
+  io.on("connection", (socket) => {
+    socket.on("request-qr", () => {
+      const sessionId = Math.random().toString(36).substring(7);
+      activeSessions.set(sessionId, { boardSocketId: socket.id });
+      socket.emit("qr-generated", sessionId);
+    });
+
+    socket.on("verify-login", ({ sessionId, userData }) => {
+      const session = activeSessions.get(sessionId);
+      if (session) {
+        io.to(session.boardSocketId).emit("login-success", userData);
+        activeSessions.delete(sessionId);
+      }
+    });
+  });
 
   app.use(express.json());
 
@@ -72,12 +101,10 @@ async function startServer() {
   // 1. إنشاء نسخة احتياطية (نسخة معدلة وأكثر أماناً)
   app.post('/api/backups/create', async (req, res) => {
     try {
-      // نتأكد أولاً أن خدمة النسخ الاحتياطي تعمل، وإلا ننشئ نسخة وهمية مؤقتة لكي لا يتعطل النظام
       let newBackup;
       if (typeof backupService !== 'undefined' && backupService.createBackup) {
         newBackup = backupService.createBackup(db);
       } else {
-        // إنشاء نسخة افتراضية في حال عدم وجود backupService
         newBackup = {
           id: Date.now().toString(),
           name: `Backup_${new Date().toISOString().split('T')[0]}`,
@@ -88,8 +115,6 @@ async function startServer() {
         };
       }
 
-      // نضع عملية الحفظ في Supabase داخل try/catch منفصل
-      // لكي لا تتسبب في إيقاف إنشاء النسخة إذا انقطع الإنترنت أو كان الجدول غير موجود
       try {
         const { error } = await supabase
           .from('backup_logs')
@@ -108,11 +133,9 @@ async function startServer() {
          console.warn("خطأ في الاتصال بقاعدة بيانات Supabase:", supaError);
       }
 
-      // حفظ النسخة في المصفوفة المؤقتة
       if (!db.backups) db.backups = [];
       db.backups.push(newBackup);
       
-      // إرسال رد النجاح للواجهة الأمامية
       res.json(newBackup);
     } catch (error) {
       console.error("خطأ حرج أثناء إنشاء النسخة:", error);
@@ -123,10 +146,9 @@ async function startServer() {
   // 2. استعادة نسخة (الاستعادة الانتقائية)
   app.post('/api/backups/:id/restore', (req, res) => {
     try {
-      const { restoreParts } = req.body; // مصفوفة بالأجزاء المراد استعادتها
+      const { restoreParts } = req.body;
       const fullBackup = backupService.restoreBackup(req.params.id);
       
-      // إذا لم يحدد أجزاء، نستعيد كل شيء. إذا حدد، نستعيد المختار فقط.
       if (!restoreParts || restoreParts.length === 0) {
         db = fullBackup;
       } else {
@@ -168,7 +190,8 @@ async function startServer() {
     app.get('*', (req, res) => res.sendFile(path.join(distPath, 'index.html')));
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  // 🆕 تم تغيير app.listen إلى httpServer.listen ليعمل السيرفر والسوكت معاً
+  httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
   });
 }
