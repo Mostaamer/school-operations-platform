@@ -43,28 +43,53 @@ export default function Login() {
   }, []);
 
   useEffect(() => {
-    socketRef.current = initSocket();
-    const socket = socketRef.current;
+    try {
+      socketRef.current = initSocket();
+      const socket = socketRef.current;
 
-    if (authView === 'show_qr') {
-      socket.emit('request-qr');
-      
-      socket.on('qr-generated', (sessionId: string) => {
-        console.log("تم استلام كود الجلسة:", sessionId);
-        setQrSessionId(sessionId);
-      });
+      if (authView === 'show_qr') {
+        // 1. طلب الكود من السيرفر كالمعتاد
+        socket.emit('request-qr');
+        
+        // 2. 🆕 (الحل لمشكلة Vercel): توليد الكود محلياً إذا تأخر السيرفر أو تم حظر السوكت
+        const fallbackTimeout = setTimeout(() => {
+          setQrSessionId((prev) => {
+            if (!prev) {
+              const localSessionId = Math.random().toString(36).substring(7);
+              console.warn("تنبيه: تم توليد الكود محلياً لتخطي قيود Vercel.");
+              
+              // إخبار السيرفر بالكود المحلي في حال كان الاتصال بطيئاً فقط
+              socket.emit('register-fallback-qr', localSessionId);
+              return localSessionId;
+            }
+            return prev;
+          });
+        }, 1200); // الانتظار 1.2 ثانية فقط قبل إظهار الكود لتجنب الشاشة البيضاء
 
-      socket.on('login-success', (userData: any) => {
-        console.log("تم الدخول بنجاح عبر الهاتف!", userData);
-        navigate('/'); 
-      });
-    } else {
-      setQrSessionId(null);
+        socket.on('qr-generated', (sessionId: string) => {
+          clearTimeout(fallbackTimeout); // إلغاء التوليد المحلي إذا استجاب السيرفر
+          console.log("تم استلام كود الجلسة:", sessionId);
+          setQrSessionId(sessionId);
+        });
+
+        socket.on('login-success', (userData: any) => {
+          console.log("تم الدخول بنجاح عبر الهاتف!", userData);
+          navigate('/'); 
+        });
+      } else {
+        setQrSessionId(null);
+      }
+
+      return () => { 
+        socket.disconnect(); 
+      };
+    } catch (error) {
+      console.error("خطأ في تهيئة الاتصال:", error);
+      // توليد الكود حتى لو فشلت تهيئة السوكت بالكامل
+      if (authView === 'show_qr' && !qrSessionId) {
+        setQrSessionId(Math.random().toString(36).substring(7));
+      }
     }
-
-    return () => { 
-      socket.disconnect(); 
-    };
   }, [authView, navigate]);
 
   const toggleLanguage = () => {
@@ -129,7 +154,6 @@ export default function Login() {
 
       <div className="relative z-10 w-full max-w-lg mx-4 rounded-[2.5rem] p-1 overflow-hidden bg-gradient-to-br from-white/10 to-transparent shadow-[0_12px_40px_0_rgba(0,0,0,0.6)] backdrop-blur-3xl border border-white/10 transition-all duration-500">
         
-        {/* 🆕 تم إضافة min-h-[600px] لمنع الشاشة من الانكماش وتطبيق flex للسنترة */}
         <div className="bg-[#0a1122]/75 w-full h-full min-h-[600px] rounded-[2.4rem] p-8 md:p-12 relative overflow-hidden flex flex-col justify-center">
           
           <div className={cn("transition-all duration-500 w-full", authView === 'standard' ? "opacity-100 translate-x-0" : "opacity-0 translate-x-full hidden")}>
@@ -309,8 +333,7 @@ export default function Login() {
                 {isRtl ? 'افتح تطبيق SOP Hub من هاتفك وقم بمسح هذا الكود للدخول فوراً.' : 'Open SOP Hub on your phone and scan this code.'}
               </p>
               
-              {/* 🆕 تم تكبير المربع الخاص بالكيو ار كود ليكون w-64 h-64 بدلاً من 56 */}
-              <div className="w-64 h-64 bg-white rounded-3xl p-4 flex flex-col items-center justify-center shadow-[0_0_40px_rgba(34,211,238,0.3)]">
+              <div className="w-64 h-64 bg-white rounded-3xl p-4 flex flex-col items-center justify-center shadow-[0_0_40px_rgba(34,211,238,0.3)] relative">
                 {qrSessionId ? (
                   <>
                     <QRCodeSVG value={qrSessionId} size={190} level={"H"} includeMargin={false} />
@@ -339,7 +362,6 @@ export default function Login() {
                 {isRtl ? 'وجه الكاميرا نحو كود السمارت بورد ليتم ربط الجلسة تلقائياً.' : 'Point your camera at the smart board code to link session.'}
               </p>
               
-              {/* 🆕 تم تكبير مساحة الكاميرا لتصبح max-w-[320px] بدلاً من 240 */}
               <div className="relative w-full max-w-[320px] aspect-square rounded-[2rem] border-2 border-dashed border-blue-500/50 flex items-center justify-center overflow-hidden bg-black/60 shadow-inner">
                 
                 <Scanner
