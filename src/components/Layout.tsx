@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
-// 🆕 استدعاء supabase من الكونتيكست
 import { useAuth, supabase } from '../lib/auth-context';
 import { useTranslation } from 'react-i18next';
 import { clsx, type ClassValue } from 'clsx';
@@ -90,7 +89,6 @@ export default function Layout() {
         { path: '/supervisor/visits-list', icon: Eye, label: t('visit_reports') },
         { path: '/supervisor/behavior-dashboard', icon: TrendingUp, label: t('behavior_dashboard') },
         { path: '/supervisor/curriculum', icon: BookOpen, label: t('curriculum_tracking') },
-        // 🗑️ تم حذف "التقارير الشاملة" من هنا بناءً على طلبك
       ],
       TEACHER: [
         ...baseLinks,
@@ -294,13 +292,17 @@ export default function Layout() {
                     console.log("تم مسح الكود:", scannedSessionId);
                     
                     if (user?.employeeCode) {
-                      // 🆕 إرسال أمر التوثيق عبر تحديث جدول Supabase بدلاً من السوكت
+                      // إرسال أمر التوثيق عبر تحديث جدول Supabase
                       await supabase.from('qr_sessions')
                         .update({ status: 'linked', user_id: user.employeeCode })
                         .eq('session_id', scannedSessionId);
+
+                      // 🆕 4. حذف احتياطي بعد 3 ثوانٍ
+                      setTimeout(() => {
+                        supabase.from('qr_sessions').delete().eq('session_id', scannedSessionId).then();
+                      }, 3000);
                     }
                     
-                    // إغلاق النافذة بعد المسح بنجاح
                     setTimeout(() => {
                       setIsScannerModalOpen(false);
                     }, 500);

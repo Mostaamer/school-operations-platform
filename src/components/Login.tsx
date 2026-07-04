@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-// 🆕 استدعاء supabase و directLogin
 import { useAuth, supabase } from '../lib/auth-context';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -17,7 +16,6 @@ function cn(...inputs: ClassValue[]) {
 
 export default function Login() {
   const { t, i18n } = useTranslation();
-  // 🆕 استخراج directLogin من الكونتيكست
   const { login, user, directLogin } = useAuth();
   const navigate = useNavigate();
 
@@ -44,29 +42,29 @@ export default function Login() {
     }
   }, []);
 
-  // 🆕 الاعتماد على Supabase Realtime بدلاً من السوكت
+  // 🆕 الاعتماد على Supabase Realtime مع نظام التنظيف الذكي
   useEffect(() => {
     let channel: any = null;
+    let timeoutId: NodeJS.Timeout;
+    let currentSessionId: string | null = null;
 
     if (authView === 'show_qr') {
-      // 1. توليد كود محلي فريد
-      const localSessionId = Math.random().toString(36).substring(7);
-      setQrSessionId(localSessionId);
+      currentSessionId = Math.random().toString(36).substring(7);
+      setQrSessionId(currentSessionId);
 
-      // 2. إنشاء السجل في Supabase
-      supabase.from('qr_sessions').insert([{ session_id: localSessionId, status: 'pending' }]).then();
+      // إنشاء السجل في Supabase
+      supabase.from('qr_sessions').insert([{ session_id: currentSessionId, status: 'pending' }]).then();
 
-      // 3. الاستماع لأي تحديثات على هذا الكود (عندما يمسحه الموبايل)
+      // الاستماع لأي تحديثات على هذا الكود
       channel = supabase
-        .channel(`qr_${localSessionId}`)
+        .channel(`qr_${currentSessionId}`)
         .on(
           'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'qr_sessions', filter: `session_id=eq.${localSessionId}` },
+          { event: 'UPDATE', schema: 'public', table: 'qr_sessions', filter: `session_id=eq.${currentSessionId}` },
           async (payload) => {
             if (payload.new.status === 'linked' && payload.new.user_id) {
               console.log("تم المسح بنجاح! جاري جلب بيانات المدرس...");
               
-              // جلب بيانات المدرس من قاعدة البيانات
               const { data } = await supabase.from('users').select('*').eq('employeeCode', payload.new.user_id).maybeSingle();
               
               if (data) {
@@ -81,7 +79,9 @@ export default function Login() {
                   assignedClasses: data.assignedClasses
                 };
                 
-                // تسجيل الدخول وتوجيه البورد للرئيسية
+                // 🆕 1. الحذف الفوري من قاعدة البيانات بعد قراءة البيانات بنجاح
+                await supabase.from('qr_sessions').delete().eq('session_id', currentSessionId);
+                
                 directLogin(userData);
                 navigate('/');
               }
@@ -90,12 +90,22 @@ export default function Login() {
         )
         .subscribe();
 
+      // 🆕 2. الإغلاق التلقائي (Auto-Expiration) بعد 3 دقائق لمنع نسيان النافذة مفتوحة
+      timeoutId = setTimeout(() => {
+        setAuthView('standard');
+      }, 180000); // 3 دقائق = 180,000 مللي ثانية
+
     } else {
       setQrSessionId(null);
     }
 
     return () => { 
       if (channel) supabase.removeChannel(channel); 
+      if (timeoutId) clearTimeout(timeoutId);
+      // 🆕 3. التنظيف عند التراجع (إذا ضغط المستخدم على زر الرجوع أو تم الإغلاق التلقائي)
+      if (currentSessionId) {
+        supabase.from('qr_sessions').delete().eq('session_id', currentSessionId).then();
+      }
     };
   }, [authView, navigate, directLogin]);
 
@@ -353,7 +363,7 @@ export default function Login() {
             </div>
           )}
 
-          {/* الواجهة الثالثة: مسح كود الـ QR (ميزة إضافية) */}
+          {/* الواجهة الثالثة: مسح كود الـ QR */}
           {authView === 'scan_qr' && (
             <div className="absolute inset-0 bg-[#0a1122]/95 p-8 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300 z-20 rounded-[2.4rem]">
               <button 
@@ -376,11 +386,16 @@ export default function Login() {
                     if (result && result.length > 0) {
                       const scannedSessionId = result[0].rawValue;
                       if (user?.employeeCode) {
-                        // 🆕 تحديث Supabase بدلاً من السوكت
+                        // تحديث الحالة لكي تقرأها السبورة
                         await supabase.from('qr_sessions').update({ 
                           status: 'linked', 
                           user_id: user.employeeCode 
                         }).eq('session_id', scannedSessionId);
+
+                        // 🆕 4. حذف احتياطي بعد 3 ثوانٍ فقط في حال انقطع الاتصال بالسبورة ولم تقم هي بالحذف
+                        setTimeout(() => {
+                          supabase.from('qr_sessions').delete().eq('session_id', scannedSessionId).then();
+                        }, 3000);
                       }
                       setAuthView('standard');
                     }
