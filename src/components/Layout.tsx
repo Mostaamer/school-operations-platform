@@ -9,12 +9,16 @@ import {
   Users, Clock, FileText, Database, BookOpen,
   ClipboardCheck, TrendingUp, UserCheck, ShieldCheck, Eye,
   Menu, GraduationCap, ZoomIn, ZoomOut, RotateCcw,
-  MessageSquareShare, Gamepad2
+  MessageSquareShare, Gamepad2, ScanLine, X
 } from 'lucide-react';
 
 import NotificationsCenter from './NotificationsCenter';
 import GlobalSearch from './GlobalSearch';
 import WelcomeOverlay from './WelcomeOverlay';
+
+// 🆕 استدعاءات الـ Scanner
+import { Scanner } from '@yudiel/react-qr-scanner';
+import { initSocket } from './auth-socket/socketHandler';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -28,6 +32,9 @@ export default function Layout() {
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
+  
+  // 🆕 حالة للتحكم في ظهور نافذة مسح الكود من داخل لوحة التحكم
+  const [isScannerModalOpen, setIsScannerModalOpen] = useState(false);
 
   const [zoomLevel, setZoomLevel] = useState(1);
   const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.1, 1.5));
@@ -59,7 +66,11 @@ export default function Layout() {
 
   const getNavigationLinks = () => {
     const role = user?.role || '';
-    const baseLinks = [{ path: '/', icon: LayoutDashboard, label: t('dashboard') }];
+    const baseLinks = [
+      { path: '/', icon: LayoutDashboard, label: t('dashboard') },
+      // 🆕 الزر الجديد المضاف للقائمة الرئيسية ليظهر لكل المستخدمين
+      { action: () => setIsScannerModalOpen(true), icon: ScanLine, label: 'ربط السمارت بورد' }
+    ];
 
     const roleLinks: Record<string, any[]> = {
       ADMIN: [
@@ -92,7 +103,6 @@ export default function Layout() {
         { path: '/teacher/behavior', icon: UserCheck, label: t('behavior_discipline') },
         { path: '/teacher/lesson', icon: BookOpen, label: t('curriculum_tracking') },
         { path: '/teacher/visits', icon: Eye, label: t('my_visits') },
-        // 🆕 تم إضافة النشاط التفاعلي هنا
         { path: '/teacher/activity', icon: Gamepad2, label: 'النشاط التفاعلي' },
       ]
     };
@@ -155,9 +165,24 @@ export default function Layout() {
           <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2 custom-scrollbar">
             {navLinks.map((link) => {
               const Icon = link.icon;
-              const isActive = location.pathname === link.path;
+              const isActive = link.path ? location.pathname === link.path : false;
+              const className = cn(
+                "flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group relative overflow-hidden", 
+                isActive ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/20" : "text-gray-700 dark:text-gray-300 hover:bg-white/60 dark:hover:bg-slate-800/60 hover:text-blue-600 dark:hover:text-blue-400"
+              );
+
+              // 🆕 تمييز الأزرار التي تقوم بإجراء (مثل فتح المسح) عن الروابط العادية
+              if (link.action) {
+                return (
+                  <button key={link.label} onClick={link.action} className={cn(className, "w-full text-start")} title={!isSidebarOpen ? link.label : ""}>
+                    <Icon className={cn("w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110", isActive && "animate-pulse")} />
+                    {isSidebarOpen && <span className="font-bold text-sm tracking-wide whitespace-nowrap z-10">{link.label}</span>}
+                  </button>
+                );
+              }
+
               return (
-                <Link key={link.path} to={link.path} className={cn("flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group relative overflow-hidden", isActive ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/20" : "text-gray-700 dark:text-gray-300 hover:bg-white/60 dark:hover:bg-slate-800/60 hover:text-blue-600 dark:hover:text-blue-400")} title={!isSidebarOpen ? link.label : ""}>
+                <Link key={link.path} to={link.path!} className={className} title={!isSidebarOpen ? link.label : ""}>
                   <Icon className={cn("w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110", isActive && "animate-pulse")} />
                   {isSidebarOpen && <span className="font-bold text-sm tracking-wide whitespace-nowrap z-10">{link.label}</span>}
                 </Link>
@@ -227,7 +252,6 @@ export default function Layout() {
           </header>
 
           <main className="flex-1 overflow-y-auto overflow-x-auto p-3 md:p-6 relative bg-transparent w-full custom-scrollbar">
-            
             <div 
               className="w-full pb-20 transition-transform duration-300"
               style={{ 
@@ -241,10 +265,60 @@ export default function Layout() {
                 <Outlet />
               </div>
             </div>
-            
           </main>
         </div>
       </div>
+
+      {/* ------------------------------------------------------------- */}
+      {/* 🆕 شاشة المسح المنبثقة (Modal) عند الضغط على ربط السمارت بورد */}
+      {/* ------------------------------------------------------------- */}
+      {isScannerModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
+          <div className="bg-[#0a1122]/95 border border-white/10 rounded-[2.5rem] p-8 w-full max-w-md flex flex-col items-center relative shadow-2xl animate-in zoom-in-95 duration-300">
+            
+            <button 
+              onClick={() => setIsScannerModalOpen(false)} 
+              className={cn("absolute top-6 bg-white/5 hover:bg-white/20 p-2 rounded-full text-gray-400 hover:text-white transition-all", i18n.language === 'ar' ? "left-6" : "right-6")}
+            >
+              <X className="w-6 h-6" />
+            </button>
+            
+            <ScanLine className="w-12 h-12 text-blue-400 mb-4" />
+            <h3 className="text-2xl font-bold text-white mb-2">{i18n.language === 'ar' ? 'ربط السمارت بورد' : 'Link Smart Board'}</h3>
+            <p className="text-gray-400 text-sm text-center mb-8">
+              {i18n.language === 'ar' ? 'وجه الكاميرا نحو الكود المعروض على السبورة ليتم تسجيل الدخول فوراً.' : 'Point your camera at the board code to login instantly.'}
+            </p>
+            
+            <div className="relative w-full max-w-[300px] aspect-square rounded-[2rem] border-2 border-dashed border-blue-500/50 flex items-center justify-center overflow-hidden bg-black/60 shadow-inner">
+              <Scanner
+                onScan={(result) => {
+                  if (result && result.length > 0) {
+                    const scannedSessionId = result[0].rawValue;
+                    console.log("تم مسح الكود:", scannedSessionId);
+                    
+                    const socket = initSocket();
+                    socket.emit('verify-login', { 
+                      sessionId: scannedSessionId, 
+                      userData: user 
+                    });
+                    
+                    // إغلاق النافذة بعد المسح بنجاح
+                    setTimeout(() => {
+                      socket.disconnect();
+                      setIsScannerModalOpen(false);
+                    }, 500);
+                  }
+                }}
+                components={{ onOff: false, torch: false, zoom: false, finder: false }}
+                styles={{ container: { width: '100%', height: '100%' } }}
+              />
+              <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,1)] animate-[pulse_2s_ease-in-out_infinite] translate-y-[140px] pointer-events-none z-10"></div>
+            </div>
+            
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

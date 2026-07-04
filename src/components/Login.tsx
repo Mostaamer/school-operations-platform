@@ -6,7 +6,6 @@ import { Atom, Dna, UserCircle2, KeyRound, Sparkles, Eye, EyeOff, Languages, QrC
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-// 🆕 استدعاء دالة تهيئة السوكت والمكتبات الجديدة للـ QR
 import { initSocket } from './auth-socket/socketHandler'; 
 import { QRCodeSVG } from 'qrcode.react';
 import { Scanner } from '@yudiel/react-qr-scanner';
@@ -17,7 +16,7 @@ function cn(...inputs: ClassValue[]) {
 
 export default function Login() {
   const { t, i18n } = useTranslation();
-  const { login, user } = useAuth(); // استخراج بيانات المستخدم الحالي (إن وجدت)
+  const { login, user } = useAuth();
   const navigate = useNavigate();
 
   const [username, setUsername] = useState('');
@@ -33,7 +32,6 @@ export default function Login() {
 
   const isRtl = i18n.language === 'ar';
   
-  // 🆕 استخدام useRef للاحتفاظ بنسخة السوكت للوصول إليها داخل دالة الـ Scanner
   const socketRef = useRef<any>(null);
 
   useEffect(() => {
@@ -45,7 +43,6 @@ export default function Login() {
   }, []);
 
   useEffect(() => {
-    // تهيئة الاتصال
     socketRef.current = initSocket();
     const socket = socketRef.current;
 
@@ -131,7 +128,9 @@ export default function Login() {
       </div>
 
       <div className="relative z-10 w-full max-w-lg mx-4 rounded-[2.5rem] p-1 overflow-hidden bg-gradient-to-br from-white/10 to-transparent shadow-[0_12px_40px_0_rgba(0,0,0,0.6)] backdrop-blur-3xl border border-white/10 transition-all duration-500">
-        <div className="bg-[#0a1122]/75 w-full h-full rounded-[2.4rem] p-8 md:p-12 relative overflow-hidden">
+        
+        {/* 🆕 تم إضافة min-h-[600px] لمنع الشاشة من الانكماش وتطبيق flex للسنترة */}
+        <div className="bg-[#0a1122]/75 w-full h-full min-h-[600px] rounded-[2.4rem] p-8 md:p-12 relative overflow-hidden flex flex-col justify-center">
           
           <div className={cn("transition-all duration-500 w-full", authView === 'standard' ? "opacity-100 translate-x-0" : "opacity-0 translate-x-full hidden")}>
             
@@ -294,11 +293,9 @@ export default function Login() {
             
           </div>
 
-          {/* ------------------------------------------------------------- */}
-          {/* الواجهة الثانية: عرض كود الـ QR للسمارت بورد */}
-          {/* ------------------------------------------------------------- */}
+          {/* الواجهة الثانية: عرض كود الـ QR */}
           {authView === 'show_qr' && (
-            <div className="absolute inset-0 bg-[#0a1122]/95 p-8 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300 z-20">
+            <div className="absolute inset-0 bg-[#0a1122]/95 p-8 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300 z-20 rounded-[2.4rem]">
               <button 
                 onClick={() => setAuthView('standard')}
                 className={cn("absolute top-6 p-2 rounded-full bg-white/5 hover:bg-white/20 text-gray-400 hover:text-white transition-all", isRtl ? "right-6" : "left-6")}
@@ -312,11 +309,11 @@ export default function Login() {
                 {isRtl ? 'افتح تطبيق SOP Hub من هاتفك وقم بمسح هذا الكود للدخول فوراً.' : 'Open SOP Hub on your phone and scan this code.'}
               </p>
               
-              <div className="w-56 h-56 bg-white rounded-3xl p-3 flex flex-col items-center justify-center shadow-[0_0_40px_rgba(34,211,238,0.3)]">
+              {/* 🆕 تم تكبير المربع الخاص بالكيو ار كود ليكون w-64 h-64 بدلاً من 56 */}
+              <div className="w-64 h-64 bg-white rounded-3xl p-4 flex flex-col items-center justify-center shadow-[0_0_40px_rgba(34,211,238,0.3)]">
                 {qrSessionId ? (
                   <>
-                    {/* 🆕 استخدام مكتبة qrcode.react لتوليد الكود الفعلي */}
-                    <QRCodeSVG value={qrSessionId} size={160} level={"H"} includeMargin={false} />
+                    <QRCodeSVG value={qrSessionId} size={190} level={"H"} includeMargin={false} />
                     <span className="text-black font-bold text-xs bg-gray-200 px-2 py-1 rounded mt-3">كود: {qrSessionId}</span>
                   </>
                 ) : (
@@ -326,11 +323,9 @@ export default function Login() {
             </div>
           )}
 
-          {/* ------------------------------------------------------------- */}
-          {/* الواجهة الثالثة: مسح كود الـ QR من هاتف المدرس */}
-          {/* ------------------------------------------------------------- */}
+          {/* الواجهة الثالثة: مسح كود الـ QR */}
           {authView === 'scan_qr' && (
-            <div className="absolute inset-0 bg-[#0a1122]/95 p-8 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300 z-20">
+            <div className="absolute inset-0 bg-[#0a1122]/95 p-8 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300 z-20 rounded-[2.4rem]">
               <button 
                 onClick={() => setAuthView('standard')}
                 className={cn("absolute top-6 p-2 rounded-full bg-white/5 hover:bg-white/20 text-gray-400 hover:text-white transition-all z-30", isRtl ? "right-6" : "left-6")}
@@ -344,23 +339,18 @@ export default function Login() {
                 {isRtl ? 'وجه الكاميرا نحو كود السمارت بورد ليتم ربط الجلسة تلقائياً.' : 'Point your camera at the smart board code to link session.'}
               </p>
               
-              <div className="relative w-full max-w-[240px] aspect-square rounded-[2rem] border-2 border-dashed border-blue-500/50 flex items-center justify-center overflow-hidden bg-black/60 shadow-inner">
+              {/* 🆕 تم تكبير مساحة الكاميرا لتصبح max-w-[320px] بدلاً من 240 */}
+              <div className="relative w-full max-w-[320px] aspect-square rounded-[2rem] border-2 border-dashed border-blue-500/50 flex items-center justify-center overflow-hidden bg-black/60 shadow-inner">
                 
-                {/* 🆕 استخدام مكون Scanner من مكتبة @yudiel/react-qr-scanner */}
                 <Scanner
                   onScan={(result) => {
                     if (result && result.length > 0) {
                       const scannedSessionId = result[0].rawValue;
-                      console.log("تم مسح الكود:", scannedSessionId);
-                      
-                      // إرسال كود البورد + بيانات المدرس المسجل للدخول حالياً إلى السيرفر
                       if (socketRef.current) {
                         socketRef.current.emit('verify-login', { 
                           sessionId: scannedSessionId, 
-                          userData: user // نمرر بيانات المستخدم الحالي
+                          userData: user 
                         });
-                        
-                        // إعادة الشاشة للوضع الافتراضي بعد المسح الناجح
                         setAuthView('standard');
                       }
                     }
@@ -369,8 +359,7 @@ export default function Login() {
                   styles={{ container: { width: '100%', height: '100%' } }}
                 />
 
-                {/* تأثير شعاع الليزر (pointer-events-none لكي لا يعيق تفاعل الكاميرا) */}
-                <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,1)] animate-[pulse_2s_ease-in-out_infinite] translate-y-[120px] pointer-events-none z-10"></div>
+                <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,1)] animate-[pulse_2s_ease-in-out_infinite] translate-y-[150px] pointer-events-none z-10"></div>
               </div>
             </div>
           )}
