@@ -8,7 +8,8 @@ import {
   LogOut, Moon, Sun, LayoutDashboard, Languages,
   Users, Clock, FileText, Database, BookOpen,
   ClipboardCheck, TrendingUp, UserCheck, ShieldCheck, Eye,
-  Menu, GraduationCap, ZoomIn, ZoomOut, RotateCcw
+  Menu, GraduationCap, ZoomIn, ZoomOut, RotateCcw,
+  MessageSquareShare, Gamepad2
 } from 'lucide-react';
 
 import NotificationsCenter from './NotificationsCenter';
@@ -29,8 +30,8 @@ export default function Layout() {
   const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
 
   const [zoomLevel, setZoomLevel] = useState(1);
-  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.1, 1.5)); 
-  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.1, 0.5)); 
+  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.1, 1.5));
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.1, 0.5));
   const handleZoomReset = () => setZoomLevel(1);
 
   useEffect(() => {
@@ -85,11 +86,14 @@ export default function Layout() {
       TEACHER: [
         ...baseLinks,
         { path: '/teacher/status', icon: UserCheck, label: t('record_attendance') },
+        { path: '/teacher/daily-post', icon: MessageSquareShare, label: 'المنشور اليومي' },
         { path: '/teacher/schedule', icon: Clock, label: t('my_schedule') },
         { path: '/teacher/attendance', icon: ClipboardCheck, label: t('absences_attendance') },
         { path: '/teacher/behavior', icon: UserCheck, label: t('behavior_discipline') },
         { path: '/teacher/lesson', icon: BookOpen, label: t('curriculum_tracking') },
         { path: '/teacher/visits', icon: Eye, label: t('my_visits') },
+        // 🆕 تم إضافة النشاط التفاعلي هنا
+        { path: '/teacher/activity', icon: Gamepad2, label: 'النشاط التفاعلي' },
       ]
     };
 
@@ -206,7 +210,9 @@ export default function Layout() {
                 {isDarkMode ? <Sun className="w-4 h-4 md:w-5 md:h-5 text-amber-400" /> : <Moon className="w-4 h-4 md:w-5 md:h-5 text-indigo-600" />}
               </button>
               
-              <div className="flex-shrink-0"><NotificationsCenter /></div>
+              <div className="relative flex-shrink-0 z-[60]">
+                <NotificationsCenter />
+              </div>
               
               <div className="flex items-center gap-2 md:gap-3 px-2 md:px-4 border-x border-white/40 dark:border-slate-700/50 flex-shrink-0">
                 <div className={`hidden sm:block text-${i18n.language === 'ar' ? 'left' : 'right'}`}>

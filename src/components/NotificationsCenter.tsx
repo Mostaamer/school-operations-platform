@@ -162,7 +162,9 @@ export default function NotificationsCenter() {
       {isOpen && (
         <div className={cn(
           "absolute mt-3 w-80 sm:w-96 bg-white/70 dark:bg-gray-900/70 backdrop-blur-2xl border border-white/40 dark:border-gray-700/50 rounded-[2rem] shadow-[0_8px_32px_0_rgba(31,38,135,0.1)] z-50 overflow-hidden transform opacity-100 scale-100 transition-all",
-          direction === 'rtl' ? "right-0 origin-top-right" : "left-0 origin-top-left"
+          // التعديل هنا: عكسنا الاتجاه ليكون صحيحاً (left-0 للعربي، right-0 للإنجليزي) وأضفنا حماية الشاشات الصغيرة
+          direction === 'rtl' ? "left-0 origin-top-left" : "right-0 origin-top-right",
+          "max-w-[calc(100vw-2rem)] sm:max-w-md"
         )}>
           <div className="p-5 border-b border-white/20 dark:border-gray-700/30 flex items-center justify-between bg-white/30 dark:bg-gray-800/30">
             <h3 className="font-bold text-gray-800 dark:text-gray-100">{t('notifications_center')}</h3>

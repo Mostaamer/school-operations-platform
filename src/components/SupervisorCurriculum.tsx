@@ -38,6 +38,7 @@ export default function SupervisorCurriculum() {
 
   const fetchCurriculumData = async () => {
     setLoading(true);
+    // نجلب البيانات مع التأكد من جلب حقل needs_approval
     const { data, error } = await supabase
       .from('lesson_logs')
       .select('*, users(name)') 
@@ -66,8 +67,10 @@ export default function SupervisorCurriculum() {
     }
   };
 
+  // الدالة الخاصة باعتماد الدرس من قبل المشرف وإرسال إشعار للمدرس
   const handleApproveLesson = async (log: any) => {
     try {
+      // 1. تحديث حالة الدرس في قاعدة البيانات ليكون معتمداً
       const { error: updateError } = await supabase
         .from('lesson_logs')
         .update({ needs_approval: false })
@@ -75,9 +78,11 @@ export default function SupervisorCurriculum() {
         
       if (updateError) throw updateError;
 
+      // 2. تحديث الواجهة فوراً
       setLessonLogs(prev => prev.map(l => l.id === log.id ? { ...l, needs_approval: false } : l));
       toast.success('تم اعتماد الدرس بنجاح!', { icon: '✅' });
 
+      // 3. إرسال إشعار للمعلم بأنه تم الاعتماد
       if (log.teacher_id) {
         await supabase.from('notifications').insert({
           sender_id: user?.id || 1,
@@ -197,6 +202,7 @@ export default function SupervisorCurriculum() {
                     </div>
 
                     <div className="flex flex-col gap-2">
+                      {/* زر الاعتماد يظهر فقط إذا كان الدرس بحاجة لاعتماد */}
                       {log.needs_approval && (
                         <button onClick={() => handleApproveLesson(log)} className="w-full py-3 rounded-xl text-sm font-black transition-all bg-orange-500 text-white hover:bg-orange-600 flex items-center justify-center gap-2 shadow-sm active:scale-95">
                           <CheckCircle size={18} /> اعتماد الدرس الآن

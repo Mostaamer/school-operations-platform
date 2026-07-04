@@ -32,6 +32,10 @@ import TeacherStatus from './components/TeacherStatus';
 import TeacherBehavior from './components/TeacherBehavior';
 import TeacherVisits from './components/TeacherVisits';
 import TeacherLesson from './components/TeacherLesson';
+import TeacherDailyLessonPost from './components/TeacherDailyLessonPost';
+
+// 🆕 تم إضافة استيراد مكون نشاط الفصل هنا
+import TeacherClassroomActivity from './components/TeacherClassroomActivity';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -102,6 +106,7 @@ export default function App() {
             <Route path="supervisor/teacher-attendance" element={<ProtectedRoute allowedRoles={['SUPERVISOR']}><SupervisorTeacherAttendance /></ProtectedRoute>} />
             <Route path="supervisor/curriculum" element={<ProtectedRoute allowedRoles={['SUPERVISOR']}><SupervisorCurriculum /></ProtectedRoute>} />
             
+            {/* قسم المعلمين */}
             <Route path="teacher/status" element={<ProtectedRoute allowedRoles={['TEACHER']}><TeacherStatus /></ProtectedRoute>} />
             <Route path="teacher/schedule" element={<ProtectedRoute allowedRoles={['TEACHER']}><ScheduleView /></ProtectedRoute>} />
             <Route path="teacher/attendance" element={<ProtectedRoute allowedRoles={['TEACHER']}><ClassroomTracking /></ProtectedRoute>} />
@@ -109,6 +114,15 @@ export default function App() {
             <Route path="teacher/behavior" element={<ProtectedRoute allowedRoles={['TEACHER']}><TeacherBehavior /></ProtectedRoute>} />
             <Route path="teacher/lesson" element={<ProtectedRoute allowedRoles={['TEACHER']}><TeacherLesson /></ProtectedRoute>} />
             <Route path="teacher/visits" element={<ProtectedRoute allowedRoles={['TEACHER']}><TeacherVisits /></ProtectedRoute>} />
+            <Route path="teacher/daily-post" element={<ProtectedRoute allowedRoles={['TEACHER']}><TeacherDailyLessonPost /></ProtectedRoute>} />
+            
+            {/* 🆕 تم إضافة مسار نشاط الفصل هنا بصلاحيات المعلم فقط */}
+            {/* ملاحظة: قمت بتمرير قيم افتراضية للفصل والمرحلة، يمكنك لاحقاً جعلها ديناميكية بناءً على اختيار المعلم */}
+            <Route path="teacher/activity" element={
+              <ProtectedRoute allowedRoles={['TEACHER']}>
+                <TeacherClassroomActivity />
+              </ProtectedRoute>
+            } />
             
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
