@@ -101,7 +101,6 @@ export default function Layout() {
   const navLinks = getNavigationLinks();
 
   return (
-    // تم إزالة overflow-hidden للسماح بالتمدد الصحيح
     <div className="relative flex h-screen w-full font-sans bg-gray-50 dark:bg-slate-900 transition-colors duration-500 overflow-hidden">
       
       {/* الخلفية */}
@@ -132,7 +131,7 @@ export default function Layout() {
             "fixed inset-y-0 z-50 flex flex-col bg-white/80 dark:bg-slate-900/90 backdrop-blur-2xl border-x border-white/40 dark:border-slate-700/50 transition-transform duration-300 shadow-2xl",
             i18n.language === 'ar' ? "right-0" : "left-0",
             isSidebarOpen 
-              ? "w-[85%] sm:w-72 translate-x-0" // تعديل احترافي لعرض القائمة في الموبايل
+              ? "w-[85%] sm:w-72 translate-x-0" 
               : (i18n.language === 'ar' ? "translate-x-full md:translate-x-0 md:w-20" : "-translate-x-full md:translate-x-0 md:w-20")
           )}
         >
@@ -230,8 +229,9 @@ export default function Layout() {
             </div>
           </header>
 
-          {/* مساحة عرض المحتوى: تم تفعيل التمرير الأفقي والرأسي بشكل صحيح */}
+          {/* مساحة عرض المحتوى: تفعيل التمرير الأفقي والرأسي بشكل صحيح */}
           <main className="flex-1 overflow-y-auto overflow-x-auto p-3 md:p-6 relative bg-transparent w-full custom-scrollbar">
+            
             {/* التعديل الجذري للتكبير: حساب العرض ديناميكياً بناءً على نسبة التكبير لعدم خلق هوامش */}
             <div 
               className="w-full pb-20 transition-transform duration-300"
@@ -242,8 +242,12 @@ export default function Layout() {
                 height: `${100 / zoomLevel}%`
               }}
             >
-              <Outlet />
+              {/* الحاوية الموحدة لضبط التباين في العرض وإعطاء لمسة احترافية متناغمة */}
+              <div className="mx-auto w-full max-w-[1400px] transition-all duration-300">
+                <Outlet />
+              </div>
             </div>
+            
           </main>
         </div>
       </div>
