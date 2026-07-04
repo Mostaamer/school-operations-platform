@@ -2,9 +2,8 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './lib/auth-context';
-import './lib/language'; // نظام اللغة
+import './lib/language'; 
 
-// مكونات النظام
 import Login from './components/Login';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
@@ -34,7 +33,6 @@ import TeacherBehavior from './components/TeacherBehavior';
 import TeacherVisits from './components/TeacherVisits';
 import TeacherLesson from './components/TeacherLesson';
 
-// تعريف الـ Types للمسارات المحمية
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: string[];
@@ -79,26 +77,22 @@ export default function App() {
           <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<DashboardRouter />} />
             
-            {/* مسارات الإدارة (حصرية للمدير ADMIN) */}
             <Route path="admin/students" element={<ProtectedRoute allowedRoles={['ADMIN']}><StudentsList /></ProtectedRoute>} />
             <Route path="admin/student-management" element={<ProtectedRoute allowedRoles={['ADMIN']}><StudentManagement /></ProtectedRoute>} />
             <Route path="admin/students/enroll" element={<ProtectedRoute allowedRoles={['ADMIN']}><StudentEnrollment /></ProtectedRoute>} />
             <Route path="admin/schedules" element={<ProtectedRoute allowedRoles={['ADMIN']}><ScheduleView /></ProtectedRoute>} />
             
-            {/* مسارات مشتركة حسب الاحتياج الفعلي */}
             <Route path="resources" element={<ProtectedRoute allowedRoles={['ADMIN', 'SUPERVISOR', 'TEACHER']}><ResourcesLibrary /></ProtectedRoute>} />
             <Route path="reports" element={<ProtectedRoute allowedRoles={['ADMIN', 'SUPERVISOR']}><SupervisorMonitoring /></ProtectedRoute>} />
             <Route path="curriculum" element={<ProtectedRoute allowedRoles={['SUPERVISOR', 'TEACHER']}><CurriculumProgress /></ProtectedRoute>} />
             <Route path="attendance" element={<ProtectedRoute allowedRoles={['SUPERVISOR']}><SupervisorMonitoring /></ProtectedRoute>} />
             
-            {/* مسارات المطور (حصرية للمطور DEVELOPER) */}
             <Route path="dev/health" element={<ProtectedRoute allowedRoles={['DEVELOPER']}><Placeholder /></ProtectedRoute>} />
             <Route path="dev/users" element={<ProtectedRoute allowedRoles={['DEVELOPER']}><UserManagement /></ProtectedRoute>} />
             <Route path="dev/audit" element={<ProtectedRoute allowedRoles={['DEVELOPER']}><AuditLogs /></ProtectedRoute>} />
             <Route path="dev/backup" element={<ProtectedRoute allowedRoles={['DEVELOPER']}><BackupManagement /></ProtectedRoute>} />
             <Route path="dev/classes" element={<ProtectedRoute allowedRoles={['DEVELOPER']}><ClassManagement /></ProtectedRoute>} />
             
-            {/* مسارات المشرف (حصرية للمشرف SUPERVISOR) */}
             <Route path="supervisor/teacher-schedules" element={<ProtectedRoute allowedRoles={['SUPERVISOR']}><SupervisorTeacherSchedule /></ProtectedRoute>} />
             <Route path="supervisor/students" element={<ProtectedRoute allowedRoles={['SUPERVISOR']}><SupervisorStudentView /></ProtectedRoute>} />
             <Route path="supervisor/behavior-dashboard" element={<ProtectedRoute allowedRoles={['SUPERVISOR']}><SupervisorBehaviorDashboard /></ProtectedRoute>} />
@@ -108,7 +102,6 @@ export default function App() {
             <Route path="supervisor/teacher-attendance" element={<ProtectedRoute allowedRoles={['SUPERVISOR']}><SupervisorTeacherAttendance /></ProtectedRoute>} />
             <Route path="supervisor/curriculum" element={<ProtectedRoute allowedRoles={['SUPERVISOR']}><SupervisorCurriculum /></ProtectedRoute>} />
             
-            {/* مسارات المعلم (حصرية للمعلم TEACHER) */}
             <Route path="teacher/status" element={<ProtectedRoute allowedRoles={['TEACHER']}><TeacherStatus /></ProtectedRoute>} />
             <Route path="teacher/schedule" element={<ProtectedRoute allowedRoles={['TEACHER']}><ScheduleView /></ProtectedRoute>} />
             <Route path="teacher/attendance" element={<ProtectedRoute allowedRoles={['TEACHER']}><ClassroomTracking /></ProtectedRoute>} />
@@ -117,7 +110,6 @@ export default function App() {
             <Route path="teacher/lesson" element={<ProtectedRoute allowedRoles={['TEACHER']}><TeacherLesson /></ProtectedRoute>} />
             <Route path="teacher/visits" element={<ProtectedRoute allowedRoles={['TEACHER']}><TeacherVisits /></ProtectedRoute>} />
             
-            {/* مسار افتراضي (Catch-all) */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

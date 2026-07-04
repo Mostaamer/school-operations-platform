@@ -28,13 +28,11 @@ export default function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
 
-  // دوال التحكم في التكبير والتصغير (Zoom) مع تحسين الحدود
   const [zoomLevel, setZoomLevel] = useState(1);
-  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.1, 1.5)); // أقصى تكبير 150%
-  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.1, 0.5)); // أقصى تصغير 50%
+  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.1, 1.5)); 
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.1, 0.5)); 
   const handleZoomReset = () => setZoomLevel(1);
 
-  // إغلاق القائمة عند تغيير الصفحة في وضع الموبايل
   useEffect(() => {
     if (window.innerWidth <= 768) {
       setIsSidebarOpen(false);
@@ -103,7 +101,6 @@ export default function Layout() {
   return (
     <div className="relative flex h-screen w-full font-sans bg-gray-50 dark:bg-slate-900 transition-colors duration-500 overflow-hidden">
       
-      {/* الخلفية */}
       <div className="absolute inset-0 z-0">
         <img 
           src={isDarkMode ? "/2_2.jpg" : "/2_1.jpg"} 
@@ -117,7 +114,6 @@ export default function Layout() {
 
       <div className="relative z-10 flex w-full h-full" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
         
-        {/* طبقة التظليل للموبايل */}
         {isSidebarOpen && (
           <div 
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity"
@@ -125,7 +121,6 @@ export default function Layout() {
           />
         )}
 
-        {/* القائمة الجانبية */}
         <aside 
           className={cn(
             "fixed inset-y-0 z-50 flex flex-col bg-white/80 dark:bg-slate-900/90 backdrop-blur-2xl border-x border-white/40 dark:border-slate-700/50 transition-transform duration-300 shadow-2xl",
@@ -174,12 +169,10 @@ export default function Layout() {
           </div>
         </aside>
 
-        {/* مساحة المحتوى الرئيسية والعلويّة */}
         <div className={cn("flex-1 flex flex-col transition-all duration-300 h-full w-full", 
           isSidebarOpen ? (i18n.language === 'ar' ? "md:mr-72" : "md:ml-72") : (i18n.language === 'ar' ? "md:mr-20" : "md:ml-20")
         )}>
           
-          {/* الهيدر: تم تحسينه ليكون مرناً flex-wrap ولا يطرد الأيقونات */}
           <header className="flex-shrink-0 z-30 bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl border-b border-white/30 dark:border-slate-700/50 px-3 md:px-6 py-3 flex items-center justify-between shadow-sm transition-colors duration-500 flex-wrap gap-y-2">
             <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
               <button 
@@ -193,7 +186,6 @@ export default function Layout() {
             
             <div className="flex items-center gap-1.5 md:gap-3 flex-wrap justify-end flex-1">
               
-              {/* أدوات التكبير والتصغير المضافة */}
               <div className="flex items-center gap-1 bg-white/40 dark:bg-slate-800/40 backdrop-blur-md border border-white/50 dark:border-slate-700/50 rounded-xl p-1 shadow-sm flex-shrink-0">
                 <button onClick={handleZoomOut} className="p-1.5 text-gray-700 dark:text-gray-200 hover:bg-white/70 dark:hover:bg-slate-700 rounded-lg transition-colors" title="تصغير الشاشة">
                   <ZoomOut className="w-4 h-4 md:w-5 md:h-5" />
@@ -216,7 +208,6 @@ export default function Layout() {
               
               <div className="flex-shrink-0"><NotificationsCenter /></div>
               
-              {/* بيانات المستخدم مرنة */}
               <div className="flex items-center gap-2 md:gap-3 px-2 md:px-4 border-x border-white/40 dark:border-slate-700/50 flex-shrink-0">
                 <div className={`hidden sm:block text-${i18n.language === 'ar' ? 'left' : 'right'}`}>
                   <p className="text-sm font-black text-gray-900 dark:text-white drop-shadow-sm truncate max-w-[100px]">{user?.name}</p>
@@ -229,10 +220,8 @@ export default function Layout() {
             </div>
           </header>
 
-          {/* مساحة عرض المحتوى: تفعيل التمرير الأفقي والرأسي بشكل صحيح */}
           <main className="flex-1 overflow-y-auto overflow-x-auto p-3 md:p-6 relative bg-transparent w-full custom-scrollbar">
             
-            {/* التعديل الجذري للتكبير: حساب العرض ديناميكياً بناءً على نسبة التكبير لعدم خلق هوامش */}
             <div 
               className="w-full pb-20 transition-transform duration-300"
               style={{ 
@@ -242,7 +231,6 @@ export default function Layout() {
                 height: `${100 / zoomLevel}%`
               }}
             >
-              {/* الحاوية الموحدة لضبط التباين في العرض وإعطاء لمسة احترافية متناغمة */}
               <div className="mx-auto w-full max-w-[1400px] transition-all duration-300">
                 <Outlet />
               </div>
