@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, QrCode, CheckSquare, Filter, X, CheckCircle, XCircle, Clock, User, FileText, Printer, Scan, Users } from 'lucide-react';
+import { Save, CheckSquare, Filter, X, CheckCircle, XCircle, Clock, User, FileText, Printer, Users, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Scanner } from '@yudiel/react-qr-scanner';
 import { supabase } from '../lib/auth-context';
@@ -19,9 +19,11 @@ export default function ClassroomTracking() {
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  // حالات ماسح الـ QR
+  // حالة لمعرفة ما إذا كان الحضور مسجلاً مسبقاً في هذا اليوم
+  const [isAttendanceSaved, setIsAttendanceSaved] = useState(false);
+  
+  // حالات ماسح الـ QR للفصل
   const [showQRModal, setShowQRModal] = useState(false);
-  const [scanMode, setScanMode] = useState<'STUDENT' | 'CLASS' | null>(null);
 
   // حالات التقرير الشهري
   const [showReportModal, setShowReportModal] = useState(false);
@@ -35,6 +37,7 @@ export default function ClassroomTracking() {
   const fetchData = async () => {
     if (!user) return;
     setLoading(true);
+    setIsAttendanceSaved(false); // إعادة تعيين الحالة
     try {
       const targetClassId = generateClassId(selectedStage, selectedGrade, selectedSection);
       const { data: sData, error: sError } = await supabase
@@ -51,15 +54,25 @@ export default function ClassroomTracking() {
       
       setStudents(sData || []);
       const newData: any = {};
+      let hasSavedRecords = false;
+
       (sData || []).forEach(s => {
-        // التعديل هنا: الحالة الافتراضية أصبحت 'ABSENT' بدلاً من 'PRESENT'
-        newData[s.id] = lData?.find((l: any) => l.student_id === s.id) || { 
+        const existingRecord = lData?.find((l: any) => l.student_id === s.id);
+        if (existingRecord) {
+          hasSavedRecords = true;
+        }
+        
+        // جميع الطلاب غائبين افتراضياً ما لم يجد لهم تسجيلاً سابقاً
+        newData[s.id] = existingRecord || { 
           student_id: s.id, 
           date: selectedDate, 
           attendance: 'ABSENT' 
         };
       });
+
       setTrackingData(newData);
+      setIsAttendanceSaved(hasSavedRecords);
+
     } catch (error: any) {
       console.error(error);
       toast.error('حدث خطأ أثناء جلب البيانات من قاعدة البيانات');
@@ -141,7 +154,7 @@ export default function ClassroomTracking() {
     toast.success('تم تحديث حالة الحضور للجميع مؤقتاً، اضغط حفظ للاعتماد');
   };
 
-  // معالجة القراءة الذكية للـ QR بناءً على نوعه
+  // معالجة القراءة الذكية للـ QR لكود الفصل المجمع فقط
   const handleScanResult = async (result: any) => {
     if (!result) return;
     try {
@@ -149,47 +162,20 @@ export default function ClassroomTracking() {
       const data = JSON.parse(text);
       const currentClassId = generateClassId(selectedStage, selectedGrade, selectedSection);
 
-      // التحقق من نوع المسح المطلوب والتوافق
-      if (scanMode === 'STUDENT' && data.type !== 'STUDENT') {
-        toast.error('يرجى مسح بطاقة طالب فردي وليس كود الفصل');
-        return;
-      }
-      if (scanMode === 'CLASS' && data.type !== 'CLASS') {
-        toast.error('يرجى مسح كود الفصل المجمع وليس بطاقة طالب');
+      if (data.type !== 'CLASS') {
+        toast.error('يرجى مسح كود الفصل المجمع الصحيح وليس كوداً آخر.');
         return;
       }
 
-      if (data.type === 'CLASS') {
-        if (data.class_id !== currentClassId) {
-          toast.error('كود الفصل الممسوح لا يطابق الفصل المحدد حالياً!');
-          return;
-        }
-        handleBulkAttendance('PRESENT');
-        setShowQRModal(false);
-        toast.success('تم تحضير جميع طلاب الفصل! لا تنس الضغط على حفظ.');
-      } 
-      else if (data.type === 'STUDENT') {
-        const studentExists = students.some(s => s.id === data.id);
-        if (!studentExists) {
-          toast.error('هذا الطالب غير مسجل في الفصل المحدد حالياً!');
-          return;
-        }
-
-        const { error } = await supabase.from('student_tracking').upsert({
-          student_id: data.id,
-          date: selectedDate,
-          attendance: 'PRESENT',
-          updated_by: user?.name || 'معلم'
-        }, { onConflict: 'student_id,date' });
-        
-        if (error) throw error;
-        
-        setTrackingData(prev => ({
-          ...prev, [data.id]: { ...prev[data.id], attendance: 'PRESENT' }
-        }));
-        toast.success(`تم تحضير الطالب بنجاح`);
-        setShowQRModal(false);
+      if (data.class_id !== currentClassId) {
+        toast.error('كود الفصل الممسوح لا يطابق الفصل المحدد حالياً!');
+        return;
       }
+
+      handleBulkAttendance('PRESENT');
+      setShowQRModal(false);
+      toast.success('تم تحضير جميع طلاب الفصل! لا تنس الضغط على حفظ.');
+      
     } catch (e) {
       console.error(e);
       toast.error('كود QR غير صالح أو غير مدعوم');
@@ -207,7 +193,12 @@ export default function ClassroomTracking() {
     }));
     
     const { error } = await supabase.from('student_tracking').upsert(logsToSave, { onConflict: 'student_id,date' });
-    error ? toast.error('خطأ في الحفظ') : toast.success('تم إرسال سجل الحضور لقاعدة البيانات بنجاح');
+    if (error) {
+      toast.error('خطأ في الحفظ');
+    } else {
+      toast.success('تم إرسال سجل الحضور لقاعدة البيانات بنجاح');
+      setIsAttendanceSaved(true); // إظهار إشعار التأكيد
+    }
     setIsSaving(false);
   };
 
@@ -263,15 +254,11 @@ export default function ClassroomTracking() {
             <FileText size={20} /> كشف شهري
           </button>
           
-          {/* أزرار مسح الـ QR المنفصلة */}
-          <button onClick={() => { setScanMode('CLASS'); setShowQRModal(true); }} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-xl flex items-center gap-2 font-bold shadow-md transition-all">
-            <Users size={20} /> تحضير الفصل QR
-          </button>
-          <button onClick={() => { setScanMode('STUDENT'); setShowQRModal(true); }} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-xl flex items-center gap-2 font-bold shadow-md transition-all">
-            <Scan size={20} /> تحضير فردي QR
+          <button onClick={() => setShowQRModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-xl flex items-center gap-2 font-bold shadow-md transition-all">
+            <Users size={20} /> مسح QR الفصل
           </button>
           
-          <button onClick={handleSaveAll} disabled={isSaving || students.length === 0} className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl flex items-center justify-center gap-2 font-bold transition-all disabled:opacity-70">
+          <button onClick={handleSaveAll} disabled={isSaving || students.length === 0} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl flex items-center justify-center gap-2 font-bold transition-all disabled:opacity-70">
             <Save size={20} /> {isSaving ? 'جاري...' : 'حفظ'}
           </button>
         </div>
@@ -294,7 +281,7 @@ export default function ClassroomTracking() {
                 setSelectedStage(newStage);
                 setSelectedGrade(schoolStructure[newStage as keyof typeof schoolStructure].years[0]);
               }}
-              className="py-3 px-4 rounded-xl border-2 border-blue-100 bg-blue-50 text-blue-900 font-bold outline-none"
+              className="py-3 px-4 rounded-xl border-2 border-blue-100 bg-blue-50 text-blue-900 font-bold outline-none cursor-pointer"
             >
               {Object.keys(schoolStructure).map((s: string) => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -304,7 +291,7 @@ export default function ClassroomTracking() {
             <select 
               value={selectedGrade} 
               onChange={(e) => setSelectedGrade(e.target.value)}
-              className="py-3 px-4 rounded-xl border-2 border-blue-100 bg-blue-50 text-blue-900 font-bold outline-none"
+              className="py-3 px-4 rounded-xl border-2 border-blue-100 bg-blue-50 text-blue-900 font-bold outline-none cursor-pointer"
             >
               {schoolStructure[selectedStage as keyof typeof schoolStructure]?.years.map((g: string) => (
                 <option key={g} value={g}>{selectedStage} {g}</option>
@@ -316,13 +303,24 @@ export default function ClassroomTracking() {
             <select 
               value={selectedSection} 
               onChange={(e) => setSelectedSection(e.target.value)}
-              className="py-3 px-4 rounded-xl border-2 border-blue-100 bg-blue-50 text-blue-900 font-bold outline-none"
+              className="py-3 px-4 rounded-xl border-2 border-blue-100 bg-blue-50 text-blue-900 font-bold outline-none cursor-pointer"
             >
               {['A', 'B', 'C', 'D', 'E'].map((s: string) => <option key={s} value={s}>فصل {s}</option>)}
             </select>
           </div>
         </div>
       </div>
+
+      {/* رسالة التأكيد في حال كان الحضور مسجلاً مسبقاً */}
+      {isAttendanceSaved && students.length > 0 && (
+        <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-2xl flex items-center gap-3 shadow-sm animate-fade-in">
+          <CheckCircle className="text-green-600 w-6 h-6 shrink-0" />
+          <div>
+            <h3 className="font-black text-sm">تم تسجيل الحضور مسبقاً</h3>
+            <p className="text-xs font-medium mt-0.5">لقد تم حفظ حالة الحضور والانصراف لهذا الفصل في هذا اليوم. يمكنك تعديل الحالات وإعادة الحفظ إذا لزم الأمر.</p>
+          </div>
+        </div>
+      )}
 
       {/* أدوات التحضير الجماعي */}
       {students.length > 0 && (
@@ -455,7 +453,7 @@ export default function ClassroomTracking() {
         </div>
       )}
 
-      {/* نافذة ماسح الـ QR (مكبرة ومحسنة) */}
+      {/* نافذة ماسح الـ QR (مخصصة للفصل المجمع فقط) */}
       {showQRModal && (
         <div className="fixed inset-0 z-[600] bg-black/80 flex items-center justify-center p-4 backdrop-blur-md">
           <div className="bg-white p-6 rounded-3xl w-full max-w-2xl shadow-2xl relative">
@@ -464,18 +462,17 @@ export default function ClassroomTracking() {
             </button>
             <div className="text-center mb-6">
               <h2 className="text-3xl font-black text-gray-800 flex items-center justify-center gap-2">
-                {scanMode === 'CLASS' ? <Users className="text-indigo-600"/> : <Scan className="text-blue-600"/>}
-                {scanMode === 'CLASS' ? 'مسح كود الفصل المجمع' : 'مسح كود الطالب الفردي'}
+                <Users className="text-indigo-600"/>
+                مسح كود الفصل المجمع
               </h2>
-              <p className="text-gray-500 font-bold mt-2">قم بتوجيه الكاميرا نحو المربع لالتقاط الكود</p>
+              <p className="text-gray-500 font-bold mt-2">قم بتوجيه الكاميرا نحو كود الفصل ليتم تحضير جميع الطلاب</p>
             </div>
-            {/* تكبير حاوية الماسح لتصبح أوضح */}
+            
             <div className="w-full h-[400px] sm:h-[450px] bg-gray-900 rounded-2xl flex items-center justify-center overflow-hidden border-8 border-gray-100 shadow-inner relative">
               <Scanner
                 onScan={(result: any) => result && handleScanResult(result)}
                 onError={(error: any) => console.error(error)}
               />
-              {/* تراكب بصري للإرشاد */}
               <div className="absolute inset-0 pointer-events-none border-[3px] border-dashed border-white/40 m-8 rounded-xl rounded-tl-[40px] rounded-br-[40px]"></div>
             </div>
           </div>
