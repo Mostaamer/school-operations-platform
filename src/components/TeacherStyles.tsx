@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-// استدعاء supabase و useAuth معاً وبشكل صحيح من auth-context
 import { supabase, useAuth } from '../lib/auth-context';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 export const teacherStyles = {
   container: "bg-[var(--bg-surface)] p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-800",
@@ -19,6 +19,7 @@ type StatusType = 'حاضر' | 'غائب' | 'متأخر';
 export default function TeacherStyles() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const { t, i18n } = useTranslation();
 
   const handleStatusUpdate = async (selectedStatus: StatusType) => {
     if (!user) return;
@@ -26,7 +27,7 @@ export default function TeacherStyles() {
 
     try {
       const today = new Date().toISOString().split('T')[0];
-      const monthYear = new Date().toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+      const monthYear = new Date().toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', { month: 'long', year: 'numeric' });
 
       const { error } = await supabase
         .from('attendance')
@@ -39,25 +40,25 @@ export default function TeacherStyles() {
 
       if (error) {
         if (error.code === '23505') {
-          toast.error('لقد قمت بتسجيل حضورك مسبقاً لهذا اليوم');
+          toast.error(i18n.language === 'ar' ? 'لقد قمت بتسجيل حضورك مسبقاً لهذا اليوم' : 'You have already registered your attendance today.');
         } else {
           console.error("Supabase Error:", error);
-          toast.error('فشل الاتصال بقاعدة البيانات');
+          toast.error('Database connection failed');
         }
       } else {
-        toast.success(`تم تسجيل الحالة: ${selectedStatus}`);
+        toast.success(i18n.language === 'ar' ? `تم تسجيل الحالة: ${selectedStatus}` : `Status registered: ${selectedStatus}`);
       }
     } catch (err) {
       console.error("Unexpected Error:", err);
-      toast.error('حدث خطأ غير متوقع');
+      toast.error('Unexpected error occurred');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className={teacherStyles.container}>
-      <h2 className={teacherStyles.title}>تسجيل الحضور اليومي</h2>
+    <div className={teacherStyles.container} dir={i18n.dir()}>
+      <h2 className={teacherStyles.title}>{t('attendance_title')}</h2>
       <div className={teacherStyles.grid}>
         
         <button 
@@ -66,7 +67,7 @@ export default function TeacherStyles() {
           className={`${teacherStyles.button} bg-green-500`}
         >
           <CheckCircle className={teacherStyles.icon} />
-          <span className={teacherStyles.text}>حاضر</span>
+          <span className={teacherStyles.text}>{t('status_present')}</span>
         </button>
 
         <button 
@@ -75,7 +76,7 @@ export default function TeacherStyles() {
           className={`${teacherStyles.button} bg-amber-500`}
         >
           <Clock className={teacherStyles.icon} />
-          <span className={teacherStyles.text}>متأخر</span>
+          <span className={teacherStyles.text}>{t('status_late')}</span>
         </button>
 
         <button 
@@ -84,7 +85,7 @@ export default function TeacherStyles() {
           className={`${teacherStyles.button} bg-red-500`}
         >
           <XCircle className={teacherStyles.icon} />
-          <span className={teacherStyles.text}>غائب</span>
+          <span className={teacherStyles.text}>{t('status_absent')}</span>
         </button>
 
       </div>

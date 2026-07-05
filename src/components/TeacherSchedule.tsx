@@ -3,11 +3,13 @@ import { supabase } from '../lib/auth-context';
 import { useAuth } from '../lib/auth-context';
 import { Calendar, Clock, BookOpen, Loader2, GraduationCap } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 export default function TeacherSchedule() {
   const { user } = useAuth();
   const [scheduleData, setScheduleData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     if (user) fetchSchedule();
@@ -25,7 +27,7 @@ export default function TeacherSchedule() {
       if (error) throw error;
       setScheduleData(data || []);
     } catch (err) {
-      toast.error('تعذر جلب الجدول من قاعدة البيانات');
+      toast.error(t('teacher_schedule.fetch_error'));
     } finally {
       setLoading(false);
     }
@@ -34,27 +36,27 @@ export default function TeacherSchedule() {
   if (loading) return (
     <div className="flex flex-col justify-center items-center h-64 gap-3">
       <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
-      <p className="text-sm text-gray-400 font-medium animate-pulse">جاري سحب البيانات من السحابة...</p>
+      <p className="text-sm text-gray-400 font-medium animate-pulse">{t('teacher_schedule.loading_data')}</p>
     </div>
   );
 
   return (
-    <div className="max-w-4xl mx-auto p-6 animate-in fade-in duration-500">
+    <div className="max-w-4xl mx-auto p-6 animate-in fade-in duration-500" dir={i18n.dir()}>
       <div className="flex items-center justify-between mb-8 border-b pb-4 border-gray-100">
         <div>
-          <h2 className="text-2xl font-black text-gray-900 dark:text-white">جدولي الدراسي</h2>
-          <p className="text-sm text-gray-500">استعراض الحصص المسندة إليك من الإدارة</p>
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white">{t('teacher_schedule.title')}</h2>
+          <p className="text-sm text-gray-500">{t('teacher_schedule.subtitle')}</p>
         </div>
         <div className="bg-blue-600/10 text-blue-600 px-4 py-2 rounded-lg font-bold">
-          {scheduleData.length} حصص
+          {scheduleData.length} {t('teacher_schedule.lessons_count')}
         </div>
       </div>
       
       {scheduleData.length === 0 ? (
         <div className="text-center py-20 bg-gray-50/50 rounded-3xl border-2 border-dashed border-gray-200">
           <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-gray-600">لا توجد بيانات</h3>
-          <p className="text-gray-400">لم يقم المدير بإدراج حصص في جدولك حتى الآن</p>
+          <h3 className="text-lg font-bold text-gray-600">{t('teacher_schedule.no_data')}</h3>
+          <p className="text-gray-400">{t('teacher_schedule.no_lessons_assigned')}</p>
         </div>
       ) : (
         <div className="grid gap-3">
@@ -70,7 +72,7 @@ export default function TeacherSchedule() {
                   <h3 className="font-black text-lg text-gray-800 dark:text-white">{item.subject_name}</h3>
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <GraduationCap className="w-4 h-4" />
-                    <span>الصف الدراسي: {item.grade_level}</span>
+                    <span>{t('teacher_schedule.grade_level')}: {item.grade_level}</span>
                   </div>
                 </div>
               </div>

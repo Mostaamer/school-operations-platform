@@ -37,6 +37,10 @@ import TeacherDailyLessonPost from './components/TeacherDailyLessonPost';
 // 🆕 تم إضافة استيراد مكون نشاط الفصل هنا
 import TeacherClassroomActivity from './components/TeacherClassroomActivity';
 
+// 🆕 تم إضافة استيراد صفحات الأمان والإعدادات الجديدة
+import SetupSecurity from './components/SetupSecurity';
+import Settings from './components/Settings';
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: string[];
@@ -78,8 +82,14 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           
+          {/* 🆕 مسار إعداد الأمان لأول مرة (محمي ومستقل عن الـ Layout ليكون ملء الشاشة) */}
+          <Route path="/setup-security" element={<ProtectedRoute><SetupSecurity /></ProtectedRoute>} />
+          
           <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<DashboardRouter />} />
+            
+            {/* 🆕 مسار الإعدادات الداخلية متاح لكل المستخدمين المسجلين */}
+            <Route path="settings" element={<Settings />} />
             
             <Route path="admin/students" element={<ProtectedRoute allowedRoles={['ADMIN']}><StudentsList /></ProtectedRoute>} />
             <Route path="admin/student-management" element={<ProtectedRoute allowedRoles={['ADMIN']}><StudentManagement /></ProtectedRoute>} />

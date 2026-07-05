@@ -9,7 +9,7 @@ import {
   Users, Clock, FileText, Database, BookOpen,
   ClipboardCheck, TrendingUp, UserCheck, ShieldCheck, Eye,
   Menu, GraduationCap, ZoomIn, ZoomOut, RotateCcw,
-  MessageSquareShare, Gamepad2, ScanLine, X
+  MessageSquareShare, Gamepad2, ScanLine, X, Settings
 } from 'lucide-react';
 
 import NotificationsCenter from './NotificationsCenter';
@@ -66,6 +66,7 @@ export default function Layout() {
     const role = user?.role || '';
     const baseLinks = [
       { path: '/', icon: LayoutDashboard, label: t('dashboard') },
+      { path: '/settings', icon: Settings, label: i18n.language === 'ar' ? 'الإعدادات' : 'Settings' },
       { action: () => setIsScannerModalOpen(true), icon: ScanLine, label: 'ربط السمارت بورد' }
     ];
 
@@ -264,9 +265,6 @@ export default function Layout() {
         </div>
       </div>
 
-      {/* ------------------------------------------------------------- */}
-      {/* 🆕 شاشة المسح المنبثقة (Modal) عند الضغط على ربط السمارت بورد */}
-      {/* ------------------------------------------------------------- */}
       {isScannerModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
           <div className="bg-[#0a1122]/95 border border-white/10 rounded-[2.5rem] p-8 w-full max-w-md flex flex-col items-center relative shadow-2xl animate-in zoom-in-95 duration-300">
@@ -292,12 +290,10 @@ export default function Layout() {
                     console.log("تم مسح الكود:", scannedSessionId);
                     
                     if (user?.employeeCode) {
-                      // إرسال أمر التوثيق عبر تحديث جدول Supabase
                       await supabase.from('qr_sessions')
                         .update({ status: 'linked', user_id: user.employeeCode })
                         .eq('session_id', scannedSessionId);
 
-                      // 🆕 4. حذف احتياطي بعد 3 ثوانٍ
                       setTimeout(() => {
                         supabase.from('qr_sessions').delete().eq('session_id', scannedSessionId).then();
                       }, 3000);
