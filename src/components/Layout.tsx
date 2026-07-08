@@ -4,7 +4,7 @@ import { useAuth, supabase } from '../lib/auth-context';
 import { useTranslation } from 'react-i18next';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import {
+import {       
   LogOut, Moon, Sun, LayoutDashboard, Languages,
   Users, Clock, FileText, Database, BookOpen,
   ClipboardCheck, TrendingUp, UserCheck, ShieldCheck, Eye,
@@ -87,7 +87,6 @@ export default function Layout() {
         { path: '/supervisor/teacher-schedules', icon: Clock, label: t('teacher_schedules') },
         { path: '/supervisor/teacher-attendance', icon: UserCheck, label: t('teacher_attendance') },
         { path: '/supervisor/visits', icon: ClipboardCheck, label: t('class_visits') },
-        { path: '/supervisor/visits-list', icon: Eye, label: t('visit_reports') },
         { path: '/supervisor/behavior-dashboard', icon: TrendingUp, label: t('behavior_dashboard') },
         { path: '/supervisor/curriculum', icon: BookOpen, label: t('curriculum_tracking') },
       ],
