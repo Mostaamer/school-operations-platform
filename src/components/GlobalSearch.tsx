@@ -28,7 +28,7 @@ export default function GlobalSearch() {
 
         <input
           type="text"
-          className={`block w-full py-2.5 ${document.documentElement.dir === 'ltr' ? 'pl-11 pr-10' : 'pr-11 pl-10'} text-sm font-medium text-gray-800 dark:text-gray-100 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border border-white/50 dark:border-slate-700/50 rounded-xl shadow-sm focus:shadow-[0_0_20px_rgba(59,130,246,0.2)] focus:border-blue-500/50 dark:focus:border-blue-400/50 outline-none transition-all duration-300 placeholder:text-gray-500 dark:placeholder:text-gray-400`}
+          className={`block w-full py-2.5 ${document.documentElement.dir === 'ltr' ? 'pl-11 pr-10' : 'pr-11 pl-10'} text-sm font-medium text-gray-900 dark:text-white bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border border-gray-300 dark:border-slate-600 rounded-xl shadow-sm focus:shadow-[0_0_20px_rgba(59,130,246,0.2)] focus:border-blue-500/50 dark:focus:border-blue-400/50 outline-none transition-all duration-300 placeholder:text-gray-500 dark:placeholder:text-gray-400`}
           placeholder={t('search_placeholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}

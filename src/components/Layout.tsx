@@ -109,7 +109,8 @@ export default function Layout() {
   const navLinks = getNavigationLinks();
 
   return (
-    <div className="relative flex h-screen w-full font-sans bg-gray-50 dark:bg-slate-900 transition-colors duration-500 overflow-hidden">
+    // تمت إضافة text-gray-900 dark:text-gray-100 هنا لتوريث الألوان
+    <div className="relative flex h-screen w-full font-sans bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 transition-colors duration-500 overflow-hidden">
       
       <div className="absolute inset-0 z-0">
         <img 
@@ -226,9 +227,9 @@ export default function Layout() {
                 <Languages className="w-4 h-4 md:w-5 md:h-5" />
               </button>
               
-              <button onClick={toggleDarkMode} className="p-2 md:p-2.5 rounded-xl bg-white/40 dark:bg-slate-800/40 backdrop-blur-md border border-white/50 dark:border-slate-700/50 text-gray-700 dark:text-gray-200 hover:bg-white/70 dark:hover:bg-slate-700 transition-colors shadow-sm flex-shrink-0">
+              {/* <button onClick={toggleDarkMode} className="p-2 md:p-2.5 rounded-xl bg-white/40 dark:bg-slate-800/40 backdrop-blur-md border border-white/50 dark:border-slate-700/50 text-gray-700 dark:text-gray-200 hover:bg-white/70 dark:hover:bg-slate-700 transition-colors shadow-sm flex-shrink-0">
                 {isDarkMode ? <Sun className="w-4 h-4 md:w-5 md:h-5 text-amber-400" /> : <Moon className="w-4 h-4 md:w-5 md:h-5 text-indigo-600" />}
-              </button>
+              </button> */}
               
               <div className="relative flex-shrink-0 z-[60]">
                 <NotificationsCenter />
