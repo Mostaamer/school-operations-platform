@@ -83,7 +83,6 @@ i18n
           "final_score": "النتيجة النهائية",
           "supervisor_notes": "ملاحظات وتوصيات المشرف",
           "no_notes": "لا توجد ملاحظات.",
-          // معايير التقييم
           "criteria_clarity": "الوضوح",
           "criteria_engagement": "التفاعل",
           "criteria_method": "الأساليب",
@@ -91,11 +90,37 @@ i18n
           "criteria_participation": "المشاركة",
           "criteria_time_management": "إدارة الوقت",
 
-          // ====== تسجيل الحضور (TeacherStyles) ======
-          "attendance_title": "تسجيل الحضور اليومي",
-          "status_present": "حاضر",
-          "status_late": "متأخر",
-          "status_absent": "غائب"
+          // ====== التقرير اليومي للدرس (DailyLessonPost) ======
+          "daily_report_title": "التقرير اليومي للدرس",
+          "daily_report_desc": "صمم تقريرك بذكاء. الحقول الفارغة لن تظهر في الرسالة النهائية.",
+          "lesson_topic": "عنوان الدرس",
+          "unit_number": "رقم الوحدة",
+          "lesson_number": "رقم الدرس",
+          "optional": "(اختياري)",
+          "key_points": "النقاط التي تم شرحها",
+          "key_points_placeholder": "اكتب كل نقطة في سطر جديد...",
+          "ministry_book": "كتاب الوزارة",
+          "booklet": "البوكليت",
+          "pages_placeholder": "صفحات (مثال: 15-18)",
+          "homework": "الواجب المنزلي",
+          "hw_placeholder": "اتركه فارغاً إذا لم يكن هناك واجب...",
+          "copy_report": "نسخ النص",
+          "share_whatsapp": "مشاركة واتساب",
+          "copy_success": "تم نسخ التقرير بنجاح!",
+          "error_title": "يرجى كتابة عنوان الدرس أولاً",
+
+          // ====== سجل جداول المعلمين (TeacherScheduleLog) ======
+          "schedule_log_title": "سجل جداول المعلمين",
+          "schedule_log_desc": "إدارة ومتابعة الجداول بشكل فردي أو مجمع",
+          "all_stages": "جميع المراحل",
+          "individual_view": "نظرة فردية",
+          "group_view": "نظرة مجمعة",
+          "show_schedule": "عرض الجدول",
+          "hide_schedule": "إخفاء الجدول",
+          "day": "اليوم",
+          "period": "الحصة",
+          "teacher": "المعلم",
+          "no_data": "لا توجد بيانات للعرض"
         }
       },
       en: {
@@ -174,7 +199,6 @@ i18n
           "final_score": "Final Score",
           "supervisor_notes": "Supervisor Notes",
           "no_notes": "No notes available.",
-          // Criteria
           "criteria_clarity": "Clarity",
           "criteria_engagement": "Engagement",
           "criteria_method": "Methods",
@@ -182,11 +206,37 @@ i18n
           "criteria_participation": "Participation",
           "criteria_time_management": "Time Mngt",
 
-          // ====== TeacherStyles (Attendance) ======
-          "attendance_title": "Daily Attendance",
-          "status_present": "Present",
-          "status_late": "Late",
-          "status_absent": "Absent"
+          // ====== DailyLessonPost ======
+          "daily_report_title": "Daily Lesson Report",
+          "daily_report_desc": "Design your report smartly. Empty fields won't appear.",
+          "lesson_topic": "Lesson Topic",
+          "unit_number": "Unit Number",
+          "lesson_number": "Lesson Number",
+          "optional": "(Optional)",
+          "key_points": "Covered Key Points",
+          "key_points_placeholder": "Write each point on a new line...",
+          "ministry_book": "Ministry Book",
+          "booklet": "Booklet",
+          "pages_placeholder": "Pages (e.g. 15-18)",
+          "homework": "Homework",
+          "hw_placeholder": "Leave blank if no homework...",
+          "copy_report": "Copy Text",
+          "share_whatsapp": "Share to WhatsApp",
+          "copy_success": "Report copied successfully!",
+          "error_title": "Please enter the lesson topic first",
+
+          // ====== TeacherScheduleLog ======
+          "schedule_log_title": "Teachers Schedule Log",
+          "schedule_log_desc": "Manage and track schedules individually or grouped",
+          "all_stages": "All Stages",
+          "individual_view": "Individual View",
+          "group_view": "Group View",
+          "show_schedule": "Show Schedule",
+          "hide_schedule": "Hide Schedule",
+          "day": "Day",
+          "period": "Period",
+          "teacher": "Teacher",
+          "no_data": "No data to display"
         }
       }
     },
